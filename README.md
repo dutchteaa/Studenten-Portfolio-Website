@@ -1,36 +1,44 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Studenten Portfolio Platform
 
-## Getting Started
+A web platform where students can showcase their projects and companies can submit project requests — built with Next.js, Firebase, and deployed on Vercel.
 
-First, run the development server:
+## Live Demo
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+🌐 [studenten-portfolio-website.vercel.app](https://studenten-portfolio-website.vercel.app)
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## What is this?
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+This platform has three types of users:
 
-## Learn More
+| Who | Account needed? | What they can do |
+|---|---|---|
+| **Student** | Yes | Register, log in, and publish projects to the public portfolio |
+| **Company** | No | Fill in a request form to ask students to build something |
+| **Admin** | Yes (manual) | Review company requests, approve or reject them, oversee all projects |
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Pages
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| URL | Access | Description |
+|---|---|---|
+| `/` | Everyone | Homepage |
+| `/portfolio` | Everyone | Public overview of all student projects |
+| `/aanvraag` | Everyone | Company request form — no account required |
+| `/login` | Everyone | Login page for students and admin |
+| `/register` | Everyone | Registration page for new students |
+| `/dashboard` | Logged-in student | Student manages their own projects |
+| `/admin` | Admin only | Manage all requests and projects |
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Tech Stack
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Frontend** — Next.js 14 (App Router) + TypeScript
+- **Styling** — Tailwind CSS
+- **Auth** — Firebase Authentication (email/password)
+- **Database** — Firestore (NoSQL)
+- **Hosting** — Vercel (auto-deploys on every push to `main`)
+- **Version control** — GitHub
