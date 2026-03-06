@@ -41,13 +41,6 @@ export default function PortfolioPage() {
   return (
     <div className="min-h-screen py-12 px-4" style={{ background: 'var(--bg)' }}>
 
-      {/* Nav hint */}
-      <div className="max-w-5xl mx-auto mb-8">
-        <a href="/" className="text-sm transition-colors hover:text-[#117e7d]" style={{ color: 'var(--text-muted)' }}>
-          ← Terug naar home
-        </a>
-      </div>
-
       {/* Header */}
       <div className="max-w-5xl mx-auto text-center mb-14">
         <div className="badge-accent justify-center mb-5">
@@ -63,16 +56,13 @@ export default function PortfolioPage() {
       </div>
 
       <div className="max-w-5xl mx-auto">
-
         {projecten.length === 0 && (
           <div
             className="text-center py-16 rounded-2xl"
             style={{ background: 'var(--bg-white)', border: '1px dashed var(--border)' }}
           >
-            <div
-              className="w-14 h-14 rounded-xl flex items-center justify-center mx-auto mb-4 text-2xl"
-              style={{ background: 'var(--accent-glow)' }}
-            >
+            <div className="w-14 h-14 rounded-xl flex items-center justify-center mx-auto mb-4 text-2xl"
+              style={{ background: 'var(--accent-glow)' }}>
               📁
             </div>
             <p style={{ color: 'var(--text-muted)' }}>Er zijn nog geen projecten gepubliceerd.</p>
@@ -89,43 +79,29 @@ export default function PortfolioPage() {
               {project.afbeeldingUrl ? (
                 <img src={project.afbeeldingUrl} alt={project.titel} className="w-full h-48 object-cover" />
               ) : (
-                <div
-                  className="w-full h-48 flex items-center justify-center text-4xl"
-                  style={{ background: 'var(--accent-glow)' }}
-                >
+                <div className="w-full h-48 flex items-center justify-center text-4xl"
+                  style={{ background: 'var(--accent-glow)' }}>
                   📁
                 </div>
               )}
               <div className="p-5">
-                <h2 className="text-lg font-semibold" style={{ color: 'var(--text-dark)' }}>
-                  {project.titel}
-                </h2>
-                <p className="text-xs mt-1 font-mono" style={{ color: 'var(--accent)' }}>
-                  Door {project.studentNaam}
-                </p>
+                <h2 className="text-lg font-semibold" style={{ color: 'var(--text-dark)' }}>{project.titel}</h2>
+                <p className="text-xs mt-1 font-mono" style={{ color: 'var(--accent)' }}>Door {project.studentNaam}</p>
                 <p className="mt-3 text-sm leading-relaxed line-clamp-3" style={{ color: 'var(--text-muted)' }}>
                   {project.beschrijving}
                 </p>
                 <div className="flex gap-3 mt-4">
                   {project.githubLink && (
-                    <a
-                      href={project.githubLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors hover:opacity-80"
-                      style={{ background: 'var(--surface-dark)', color: 'var(--text-on-dark)' }}
-                    >
+                    <a href={project.githubLink} target="_blank" rel="noopener noreferrer"
+                      className="text-xs font-semibold px-3 py-1.5 rounded-lg hover:opacity-80"
+                      style={{ background: 'var(--surface-dark)', color: 'var(--text-on-dark)' }}>
                       GitHub
                     </a>
                   )}
                   {project.demoLink && (
-                    <a
-                      href={project.demoLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors hover:opacity-80"
-                      style={{ background: 'var(--accent)', color: '#fff' }}
-                    >
+                    <a href={project.demoLink} target="_blank" rel="noopener noreferrer"
+                      className="text-xs font-semibold px-3 py-1.5 rounded-lg hover:opacity-80"
+                      style={{ background: 'var(--accent)', color: '#fff' }}>
                       Live demo
                     </a>
                   )}
@@ -144,17 +120,12 @@ export default function PortfolioPage() {
             <span className="w-1.5 h-1.5 rounded-full animate-pulse-dot" style={{ background: 'var(--accent)' }} />
             Voor bedrijven
           </div>
-          <h2 className="text-2xl font-bold mb-3" style={{ color: 'var(--text-on-dark)' }}>
-            Bent u een bedrijf?
-          </h2>
+          <h2 className="text-2xl font-bold mb-3" style={{ color: 'var(--text-on-dark)' }}>Bent u een bedrijf?</h2>
           <p className="mb-6" style={{ color: 'var(--text-on-dark-muted)' }}>
             Vraag een project aan en laat onze studenten aan de slag gaan.
           </p>
-          <a href="/aanvraag" className="btn-accent">
-            Project aanvragen
-          </a>
+          <a href="/aanvraag" className="btn-accent">Project aanvragen</a>
         </div>
-
       </div>
     </div>
   );

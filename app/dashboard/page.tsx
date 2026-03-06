@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { logout } from '@/lib/auth';
 import { collection, addDoc, query, where, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
@@ -81,25 +80,12 @@ export default function DashboardPage() {
             <h1 className="text-3xl font-bold" style={{ color: 'var(--text-dark)' }}>Mijn Portfolio</h1>
             <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>{user?.email}</p>
           </div>
-          <div className="flex gap-3">
-            <button
-              onClick={() => setToonFormulier(!toonFormulier)}
-              className="btn-accent text-sm"
-            >
-              + Project toevoegen
-            </button>
-            <button
-              onClick={() => { logout(); router.push('/login'); }}
-              className="text-sm px-4 py-2 rounded-lg font-medium transition-colors"
-              style={{
-                background: 'var(--bg-white)',
-                color: 'var(--text-muted)',
-                border: '1px solid var(--border)',
-              }}
-            >
-              Uitloggen
-            </button>
-          </div>
+          <button
+            onClick={() => setToonFormulier(!toonFormulier)}
+            className="btn-accent text-sm"
+          >
+            + Project toevoegen
+          </button>
         </div>
 
         {/* Add project form */}
@@ -169,14 +155,14 @@ export default function DashboardPage() {
                   <div className="flex gap-3 mt-3">
                     {p.githubLink && (
                       <a href={p.githubLink} target="_blank" rel="noopener noreferrer"
-                        className="text-xs font-semibold px-3 py-1 rounded-lg transition-colors"
+                        className="text-xs font-semibold px-3 py-1 rounded-lg"
                         style={{ background: 'var(--surface-dark)', color: 'var(--text-on-dark)' }}>
                         GitHub
                       </a>
                     )}
                     {p.demoLink && (
                       <a href={p.demoLink} target="_blank" rel="noopener noreferrer"
-                        className="text-xs font-semibold px-3 py-1 rounded-lg transition-colors hover:opacity-80"
+                        className="text-xs font-semibold px-3 py-1 rounded-lg hover:opacity-80"
                         style={{ background: 'var(--accent)', color: '#fff' }}>
                         Live demo
                       </a>
@@ -185,7 +171,7 @@ export default function DashboardPage() {
                 </div>
                 <button
                   onClick={() => projectVerwijderen(p.id)}
-                  className="ml-4 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
+                  className="ml-4 text-xs font-medium px-3 py-1.5 rounded-lg"
                   style={{ color: '#991b1b', background: '#fee2e2' }}
                 >
                   Verwijderen

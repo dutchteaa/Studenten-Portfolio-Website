@@ -23,39 +23,6 @@ export default function HomePage() {
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg)' }}>
 
-      {/* ── Navigation ── */}
-      <nav style={{ background: 'var(--bg-white)', borderBottom: '1px solid var(--border)' }}>
-        <div className="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <span
-              className="w-2.5 h-2.5 rounded-full animate-pulse-dot"
-              style={{ background: 'var(--accent)' }}
-            />
-            <span
-              className="font-bold text-lg tracking-tight"
-              style={{ fontFamily: 'JetBrains Mono, monospace', color: 'var(--accent)' }}
-            >
-              SP<span style={{ color: 'var(--text-dark)' }}>.dev</span>
-            </span>
-          </div>
-          <div className="flex items-center gap-6">
-            <a href="/portfolio"
-              className="text-sm font-medium transition-colors hover:text-[#117e7d]"
-              style={{ color: 'var(--text-muted)' }}>
-              Portfolio
-            </a>
-            <a href="/aanvraag"
-              className="text-sm font-medium transition-colors hover:text-[#117e7d]"
-              style={{ color: 'var(--text-muted)' }}>
-              Project aanvragen
-            </a>
-            <a href="/login" className="btn-accent text-sm">
-              Inloggen
-            </a>
-          </div>
-        </div>
-      </nav>
-
       {/* ── Hero ── */}
       <section className="relative overflow-hidden py-24 px-6 bg-grid">
         {/* Subtle radial glow */}
@@ -161,7 +128,7 @@ export default function HomePage() {
                 )}
               </div>
 
-              {/* Code snippet below */}
+              {/* Code snippet */}
               <div
                 className="px-6 pb-6 font-mono text-xs space-y-1"
                 style={{ color: 'var(--text-on-dark-muted)' }}
@@ -220,10 +187,7 @@ export default function HomePage() {
               <div
                 key={i}
                 className={`animate-fade-up animate-fade-up-${i + 1} card-hover p-7 rounded-xl`}
-                style={{
-                  background: 'var(--bg)',
-                  border: '1px solid var(--border)',
-                }}
+                style={{ background: 'var(--bg)', border: '1px solid var(--border)' }}
               >
                 <div
                   className="w-12 h-12 rounded-xl flex items-center justify-center mb-5 text-2xl"
@@ -237,11 +201,7 @@ export default function HomePage() {
                 <p className="text-sm leading-relaxed mb-5" style={{ color: 'var(--text-muted)' }}>
                   {card.desc}
                 </p>
-                <a
-                  href={card.link}
-                  className="text-sm font-semibold hover:underline"
-                  style={{ color: 'var(--accent)' }}
-                >
+                <a href={card.link} className="text-sm font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
                   {card.linkText}
                 </a>
               </div>
@@ -251,10 +211,7 @@ export default function HomePage() {
       </section>
 
       {/* ── Dark CTA ── */}
-      <section
-        className="py-24 px-6 bg-grid-dark"
-        style={{ background: 'var(--surface-dark)' }}
-      >
+      <section className="py-24 px-6 bg-grid-dark" style={{ background: 'var(--surface-dark)' }}>
         <div className="max-w-2xl mx-auto text-center">
           <div className="badge-accent mb-6 justify-center">
             <span className="w-1.5 h-1.5 rounded-full animate-pulse-dot" style={{ background: 'var(--accent)' }} />
@@ -279,12 +236,7 @@ export default function HomePage() {
           style={{ color: 'var(--text-on-dark-muted)' }}
         >
           <div className="flex items-center gap-2">
-            <span
-              className="font-bold font-mono"
-              style={{ color: 'var(--accent)' }}
-            >
-              SP.dev
-            </span>
+            <span className="font-bold font-mono" style={{ color: 'var(--accent)' }}>SP.dev</span>
             <span>© 2025 Studenten Portfolio</span>
           </div>
           <div className="flex gap-6">
@@ -293,12 +245,7 @@ export default function HomePage() {
               { label: 'Project aanvragen', href: '/aanvraag' },
               { label: 'Inloggen', href: '/login' },
             ].map((l) => (
-              <a
-                key={l.href}
-                href={l.href}
-                className="transition-colors hover:text-white"
-                style={{ color: 'var(--text-on-dark-muted)' }}
-              >
+              <a key={l.href} href={l.href} className="transition-colors hover:text-white" style={{ color: 'var(--text-on-dark-muted)' }}>
                 {l.label}
               </a>
             ))}

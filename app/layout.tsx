@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { AuthProvider } from '@/context/AuthContext';
+import Navbar from '@/components/Navbar';
 
 export const metadata: Metadata = {
   title: 'Studenten Portfolio — Smart ICT Nova College',
@@ -12,6 +13,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="nl">
       <body>
         <AuthProvider>
+          <Navbar />
           {children}
         </AuthProvider>
       </body>

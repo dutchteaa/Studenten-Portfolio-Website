@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { collection, getDocs, updateDoc, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { logout } from '@/lib/auth';
 
 interface Aanvraag {
   id: string;
@@ -77,21 +76,12 @@ export default function AdminPage() {
       <div className="max-w-5xl mx-auto">
 
         {/* Header */}
-        <div className="animate-fade-up flex justify-between items-center mb-8">
-          <div>
-            <div className="badge-accent mb-3">
-              <span className="w-1.5 h-1.5 rounded-full animate-pulse-dot" style={{ background: 'var(--accent)' }} />
-              Admin
-            </div>
-            <h1 className="text-3xl font-bold" style={{ color: 'var(--text-dark)' }}>Admin Dashboard</h1>
+        <div className="animate-fade-up mb-8">
+          <div className="badge-accent mb-3">
+            <span className="w-1.5 h-1.5 rounded-full animate-pulse-dot" style={{ background: 'var(--accent)' }} />
+            Admin
           </div>
-          <button
-            onClick={() => { logout(); router.push('/login'); }}
-            className="text-sm px-4 py-2 rounded-lg font-medium transition-colors"
-            style={{ background: 'var(--bg-white)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
-          >
-            Uitloggen
-          </button>
+          <h1 className="text-3xl font-bold" style={{ color: 'var(--text-dark)' }}>Admin Dashboard</h1>
         </div>
 
         {/* Stats */}
@@ -150,47 +140,35 @@ export default function AdminPage() {
                     <p className="mt-3 text-sm leading-relaxed" style={{ color: 'var(--text-dark)' }}>
                       {a.projectomschrijving}
                     </p>
-                    <div className="flex flex-wrap gap-4 mt-3">
+                    <div className="flex flex-wrap gap-3 mt-3">
                       {a.technologieen && (
-                        <span
-                          className="text-xs px-2 py-1 rounded-md font-mono"
-                          style={{ background: 'var(--accent-glow)', color: 'var(--accent)' }}
-                        >
+                        <span className="text-xs px-2 py-1 rounded-md font-mono"
+                          style={{ background: 'var(--accent-glow)', color: 'var(--accent)' }}>
                           {a.technologieen}
                         </span>
                       )}
                       {a.deadline && (
-                        <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                          Deadline: {a.deadline}
-                        </span>
+                        <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Deadline: {a.deadline}</span>
                       )}
                       {a.tijdsduur && (
-                        <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                          Duur: {a.tijdsduur}
-                        </span>
+                        <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Duur: {a.tijdsduur}</span>
                       )}
                     </div>
                   </div>
                   <div className="flex flex-col items-end gap-3 shrink-0">
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-semibold status-${a.status}`}
-                    >
+                    <span className={`px-3 py-1 rounded-full text-xs font-semibold status-${a.status}`}>
                       {a.status}
                     </span>
                     {a.status === 'nieuw' && (
                       <div className="flex gap-2">
-                        <button
-                          onClick={() => statusWijzigen(a.id, 'goedgekeurd')}
-                          className="text-xs px-3 py-1.5 rounded-lg font-medium transition-colors"
-                          style={{ background: '#dcfce7', color: '#166534' }}
-                        >
+                        <button onClick={() => statusWijzigen(a.id, 'goedgekeurd')}
+                          className="text-xs px-3 py-1.5 rounded-lg font-medium"
+                          style={{ background: '#dcfce7', color: '#166534' }}>
                           Goedkeuren
                         </button>
-                        <button
-                          onClick={() => statusWijzigen(a.id, 'afgewezen')}
-                          className="text-xs px-3 py-1.5 rounded-lg font-medium transition-colors"
-                          style={{ background: '#fee2e2', color: '#991b1b' }}
-                        >
+                        <button onClick={() => statusWijzigen(a.id, 'afgewezen')}
+                          className="text-xs px-3 py-1.5 rounded-lg font-medium"
+                          style={{ background: '#fee2e2', color: '#991b1b' }}>
                           Afwijzen
                         </button>
                       </div>
@@ -216,20 +194,16 @@ export default function AdminPage() {
                 <p className="mt-2 text-sm leading-relaxed" style={{ color: 'var(--text-dark)' }}>{p.beschrijving}</p>
                 <div className="flex gap-3 mt-3">
                   {p.githubLink && (
-                    <a
-                      href={p.githubLink} target="_blank" rel="noopener noreferrer"
+                    <a href={p.githubLink} target="_blank" rel="noopener noreferrer"
                       className="text-xs font-semibold px-3 py-1.5 rounded-lg"
-                      style={{ background: 'var(--surface-dark)', color: 'var(--text-on-dark)' }}
-                    >
+                      style={{ background: 'var(--surface-dark)', color: 'var(--text-on-dark)' }}>
                       GitHub
                     </a>
                   )}
                   {p.demoLink && (
-                    <a
-                      href={p.demoLink} target="_blank" rel="noopener noreferrer"
+                    <a href={p.demoLink} target="_blank" rel="noopener noreferrer"
                       className="text-xs font-semibold px-3 py-1.5 rounded-lg"
-                      style={{ background: 'var(--accent)', color: '#fff' }}
-                    >
+                      style={{ background: 'var(--accent)', color: '#fff' }}>
                       Live demo
                     </a>
                   )}
