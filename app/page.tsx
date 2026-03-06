@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 const TERMINAL_LINES = [
   { text: '$ npm run portfolio', color: 'var(--text-on-dark-muted)' },
@@ -11,6 +13,7 @@ const TERMINAL_LINES = [
 
 export default function HomePage() {
   const [visibleLines, setVisibleLines] = useState(0);
+  const [stats, setStats] = useState({ studenten: 0, projecten: 0 });
 
   useEffect(() => {
     const timers: ReturnType<typeof setTimeout>[] = [];
@@ -18,6 +21,16 @@ export default function HomePage() {
       timers.push(setTimeout(() => setVisibleLines(i + 1), i * 700 + 400));
     });
     return () => timers.forEach(clearTimeout);
+  }, []);
+
+  useEffect(() => {
+    async function laadStats() {
+      const snapshot = await getDocs(collection(db, 'projecten'));
+      const projecten = snapshot.docs.map(d => d.data());
+      const uniqueStudenten = new Set(projecten.map(p => p.studentId)).size;
+      setStats({ studenten: uniqueStudenten, projecten: projecten.length });
+    }
+    laadStats();
   }, []);
 
   return (
@@ -37,9 +50,17 @@ export default function HomePage() {
 
           {/* Left */}
           <div>
-            <div className="animate-fade-up animate-fade-up-1 badge-accent mb-6">
-              <span className="w-1.5 h-1.5 rounded-full animate-pulse-dot" style={{ background: 'var(--accent)' }} />
-              School Portfolio Platform
+            <div className="animate-fade-up animate-fade-up-1 flex flex-wrap gap-2 mb-6">
+              <span className="badge-accent">
+                <span className="w-1.5 h-1.5 rounded-full animate-pulse-dot" style={{ background: 'var(--accent)' }} />
+                School Portfolio Platform
+              </span>
+              <span
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold"
+                style={{ background: '#fff7ed', color: '#c2410c', border: '1px solid #fed7aa' }}
+              >
+                🎓 Nova College
+              </span>
             </div>
 
             <h1
@@ -54,8 +75,8 @@ export default function HomePage() {
               className="animate-fade-up animate-fade-up-3 text-lg mb-10 max-w-lg"
               style={{ color: 'var(--text-muted)', lineHeight: '1.7' }}
             >
-              Bekijk projecten van onze studenten of vraag een project aan
-              en laat onze studenten aan de slag gaan met jouw uitdaging.
+              Een platform van Nova College studenten. Bekijk onze projecten of
+              vraag een project aan en laat onze studenten aan de slag gaan met jouw uitdaging.
             </p>
 
             <div className="animate-fade-up animate-fade-up-4 flex gap-4 flex-wrap">
@@ -72,16 +93,22 @@ export default function HomePage() {
               className="animate-fade-up animate-fade-up-5 mt-12 flex gap-8 pt-8"
               style={{ borderTop: '1px solid var(--border)' }}
             >
-              {[
-                { label: 'Studenten', value: '50+' },
-                { label: 'Projecten', value: '120+' },
-                { label: 'Bedrijven', value: '30+' },
-              ].map((stat) => (
-                <div key={stat.label}>
-                  <p className="text-2xl font-bold" style={{ color: 'var(--accent)' }}>{stat.value}</p>
-                  <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{stat.label}</p>
-                </div>
-              ))}
+              <div>
+                <p className="text-2xl font-bold" style={{ color: 'var(--accent)' }}>
+                  {stats.studenten > 0 ? stats.studenten : '—'}
+                </p>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>Studenten</p>
+              </div>
+              <div>
+                <p className="text-2xl font-bold" style={{ color: 'var(--accent)' }}>
+                  {stats.projecten > 0 ? stats.projecten : '—'}
+                </p>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>Projecten</p>
+              </div>
+              <div>
+                <p className="text-2xl font-bold" style={{ color: 'var(--accent)' }}>Nova</p>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>College</p>
+              </div>
             </div>
           </div>
 
@@ -135,18 +162,42 @@ export default function HomePage() {
               >
                 <div>
                   <span style={{ color: '#7dd3fc' }}>const</span>{' '}
-                  <span style={{ color: '#e8ecf0' }}>platform</span>{' '}
+                  <span style={{ color: '#e8ecf0' }}>school</span>{' '}
                   <span style={{ color: 'var(--text-on-dark-muted)' }}>=</span>{' '}
-                  <span style={{ color: '#4ade80' }}>'StudentenPortfolio'</span>;
+                  <span style={{ color: '#4ade80' }}>'Nova College'</span>;
                 </div>
                 <div>
                   <span style={{ color: '#7dd3fc' }}>export default</span>{' '}
-                  <span style={{ color: '#e8ecf0' }}>platform</span>;
+                  <span style={{ color: '#e8ecf0' }}>school</span>;
                 </div>
               </div>
             </div>
           </div>
 
+        </div>
+      </section>
+
+      {/* ── Nova College banner ── */}
+      <section
+        className="py-10 px-6"
+        style={{ background: 'var(--bg-white)', borderBottom: '1px solid var(--border)' }}
+      >
+        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center gap-5">
+          <div
+            className="w-14 h-14 rounded-xl flex items-center justify-center text-2xl shrink-0"
+            style={{ background: '#fff7ed', border: '1px solid #fed7aa' }}
+          >
+            🎓
+          </div>
+          <div>
+            <h2 className="text-lg font-bold" style={{ color: 'var(--text-dark)' }}>
+              Een project van Nova College
+            </h2>
+            <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
+              Dit platform is gebouwd door studenten van Nova College als schoolproject.
+              Studenten publiceren hier hun werk en bedrijven kunnen projecten aanvragen.
+            </p>
+          </div>
         </div>
       </section>
 
@@ -165,7 +216,7 @@ export default function HomePage() {
               {
                 icon: '🎓',
                 title: 'Voor studenten',
-                desc: 'Maak een account aan en publiceer je projecten op de publieke portfolio.',
+                desc: 'Maak een account aan met je Nova College e-mail en publiceer je projecten op de publieke portfolio.',
                 link: '/register',
                 linkText: 'Account aanmaken →',
               },
@@ -179,7 +230,7 @@ export default function HomePage() {
               {
                 icon: '💼',
                 title: 'Projecten bekijken',
-                desc: 'Bekijk alle gepubliceerde projecten van onze studenten op de portfolio pagina.',
+                desc: 'Bekijk alle gepubliceerde projecten van onze Nova College studenten op de portfolio pagina.',
                 link: '/portfolio',
                 linkText: 'Naar portfolio →',
               },
@@ -221,7 +272,7 @@ export default function HomePage() {
             Bent u een bedrijf?
           </h3>
           <p className="text-lg mb-10" style={{ color: 'var(--text-on-dark-muted)', lineHeight: '1.7' }}>
-            Vraag gratis een project aan en laat onze studenten een oplossing bouwen voor uw uitdaging.
+            Vraag gratis een project aan en laat onze Nova College studenten een oplossing bouwen voor uw uitdaging.
           </p>
           <a href="/aanvraag" className="btn-accent text-base">
             Project aanvragen
@@ -237,7 +288,7 @@ export default function HomePage() {
         >
           <div className="flex items-center gap-2">
             <span className="font-bold font-mono" style={{ color: 'var(--accent)' }}>SP.dev</span>
-            <span>© 2025 Studenten Portfolio</span>
+            <span>© 2025 Nova College · Studenten Portfolio</span>
           </div>
           <div className="flex gap-6">
             {[

@@ -32,6 +32,10 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+button, [role="button"], a {
+  cursor: pointer;
+}
+
 /* ── Animations ── */
 @keyframes fadeUp {
   from { transform: translateY(24px); opacity: 0; }
@@ -164,6 +168,7 @@ body {
   padding: 0.65rem 1.5rem;
   transition: opacity 0.15s, box-shadow 0.15s;
   display: inline-block;
+  cursor: pointer;
 }
 .btn-accent:hover {
   opacity: 0.88;
