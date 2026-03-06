@@ -15,8 +15,12 @@ export default function RegisterPage() {
     try {
       await register(email, password, name);
       router.push('/dashboard');
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('Er ging iets mis bij het registreren.');
+      }
     }
   }
 

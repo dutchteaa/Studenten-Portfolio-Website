@@ -7,16 +7,37 @@ import { collection, getDocs, updateDoc, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { logout } from '@/lib/auth';
 
+interface Aanvraag {
+  id: string;
+  bedrijfsnaam: string;
+  contactpersoon: string;
+  email: string;
+  projectomschrijving: string;
+  technologieen?: string;
+  deadline?: string;
+  tijdsduur?: string;
+  status: string;
+}
+
+interface Project {
+  id: string;
+  titel: string;
+  beschrijving: string;
+  studentNaam: string;
+  githubLink?: string;
+  demoLink?: string;
+}
+
 export default function AdminPage() {
   const { role, loading } = useAuth();
   const router = useRouter();
-  const [aanvragen, setAanvragen] = useState<any[]>([]);
-  const [projecten, setProjecten] = useState<any[]>([]);
+  const [aanvragen, setAanvragen] = useState<Aanvraag[]>([]);
+  const [projecten, setProjecten] = useState<Project[]>([]);
   const [actieveTab, setActieveTab] = useState<'aanvragen' | 'projecten'>('aanvragen');
 
   useEffect(() => {
     if (!loading && role !== 'admin') router.push('/login');
-  }, [role, loading]);
+  }, [role, loading, router]);
 
   useEffect(() => {
     if (role === 'admin') {
@@ -27,12 +48,12 @@ export default function AdminPage() {
 
   async function laadAanvragen() {
     const snapshot = await getDocs(collection(db, 'aanvragen'));
-    setAanvragen(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
+    setAanvragen(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Aanvraag)));
   }
 
   async function laadProjecten() {
     const snapshot = await getDocs(collection(db, 'projecten'));
-    setProjecten(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
+    setProjecten(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Project)));
   }
 
   async function statusWijzigen(id: string, nieuweStatus: string) {
@@ -108,8 +129,8 @@ export default function AdminPage() {
             <p className="text-gray-500 text-sm">Door: {p.studentNaam}</p>
             <p className="mt-2 text-gray-700">{p.beschrijving}</p>
             <div className="flex gap-4 mt-2">
-              {p.githubLink && <a href={p.githubLink} target="_blank" className="text-blue-600 hover:underline text-sm">GitHub</a>}
-              {p.demoLink && <a href={p.demoLink} target="_blank" className="text-blue-600 hover:underline text-sm">Live demo</a>}
+              {p.githubLink && <a href={p.githubLink} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm">GitHub</a>}
+              {p.demoLink && <a href={p.demoLink} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm">Live demo</a>}
             </div>
           </div>
         ))}

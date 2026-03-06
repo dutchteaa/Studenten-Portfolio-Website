@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { logout } from '@/lib/auth';
@@ -25,24 +25,25 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (!loading && !user) router.push('/login');
-  }, [user, loading]);
+  }, [user, loading, router]);
+
+  const laadProjecten = useCallback(async () => {
+    if (!user) return;
+    const q = query(collection(db, 'projecten'), where('studentId', '==', user.uid));
+    const snapshot = await getDocs(q);
+    setProjecten(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Project)));
+  }, [user]);
 
   useEffect(() => {
     if (user) laadProjecten();
-  }, [user]);
-
-  async function laadProjecten() {
-    const q = query(collection(db, 'projecten'), where('studentId', '==', user!.uid));
-    const snapshot = await getDocs(q);
-    setProjecten(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Project)));
-  }
+  }, [user, laadProjecten]);
 
   async function projectToevoegen() {
-    if (!form.titel || !form.beschrijving) return;
+    if (!form.titel || !form.beschrijving || !user) return;
     await addDoc(collection(db, 'projecten'), {
       ...form,
-      studentId: user!.uid,
-      studentNaam: user!.displayName ?? user!.email,
+      studentId: user.uid,
+      studentNaam: user.displayName ?? user.email,
       gepubliceerdOp: new Date().toISOString(),
     });
     setForm({ titel: '', beschrijving: '', githubLink: '', demoLink: '', afbeeldingUrl: '' });
@@ -108,8 +109,8 @@ export default function DashboardPage() {
                   <h3 className="text-xl font-semibold">{p.titel}</h3>
                   <p className="text-gray-600 mt-1">{p.beschrijving}</p>
                   <div className="flex gap-4 mt-3">
-                    {p.githubLink && <a href={p.githubLink} target="_blank" className="text-blue-600 hover:underline text-sm">GitHub</a>}
-                    {p.demoLink && <a href={p.demoLink} target="_blank" className="text-blue-600 hover:underline text-sm">Live demo</a>}
+                    {p.githubLink && <a href={p.githubLink} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm">GitHub</a>}
+                    {p.demoLink && <a href={p.demoLink} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm">Live demo</a>}
                   </div>
                 </div>
                 <button onClick={() => projectVerwijderen(p.id)} className="text-red-500 hover:text-red-700 text-sm">Verwijderen</button>

@@ -58,11 +58,11 @@ export default function PortfolioPage() {
                 <p className="text-gray-600 mt-3 text-sm line-clamp-3">{project.beschrijving}</p>
                 <div className="flex gap-3 mt-4">
                   {project.githubLink && (
-                    <a href={project.githubLink} target="_blank"
+                    <a href={project.githubLink} target="_blank" rel="noopener noreferrer"
                       className="text-sm bg-gray-900 text-white px-3 py-1 rounded-lg hover:bg-gray-700">GitHub</a>
                   )}
                   {project.demoLink && (
-                    <a href={project.demoLink} target="_blank"
+                    <a href={project.demoLink} target="_blank" rel="noopener noreferrer"
                       className="text-sm bg-blue-600 text-white px-3 py-1 rounded-lg hover:bg-blue-700">Live demo</a>
                   )}
                 </div>

@@ -58,43 +58,43 @@ export default function AanvraagPage() {
         <h2 className="text-lg font-semibold mb-4 text-gray-700">Bedrijfsgegevens</h2>
         <div className="grid grid-cols-2 gap-4 mb-4">
           <div>
-            <label className="block text-sm font-medium mb-1">Bedrijfsnaam *</label>
-            <input name="bedrijfsnaam" value={form.bedrijfsnaam} onChange={handleChange}
+            <label htmlFor="bedrijfsnaam" className="block text-sm font-medium mb-1">Bedrijfsnaam *</label>
+            <input id="bedrijfsnaam" name="bedrijfsnaam" value={form.bedrijfsnaam} onChange={handleChange}
               className="w-full border rounded-lg px-4 py-2" placeholder="Naam BV" />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Contactpersoon *</label>
-            <input name="contactpersoon" value={form.contactpersoon} onChange={handleChange}
+            <label htmlFor="contactpersoon" className="block text-sm font-medium mb-1">Contactpersoon *</label>
+            <input id="contactpersoon" name="contactpersoon" value={form.contactpersoon} onChange={handleChange}
               className="w-full border rounded-lg px-4 py-2" placeholder="Jan de Vries" />
           </div>
         </div>
         <div className="mb-6">
-          <label className="block text-sm font-medium mb-1">E-mailadres *</label>
-          <input name="email" type="email" value={form.email} onChange={handleChange}
+          <label htmlFor="email" className="block text-sm font-medium mb-1">E-mailadres *</label>
+          <input id="email" name="email" type="email" value={form.email} onChange={handleChange}
             className="w-full border rounded-lg px-4 py-2" placeholder="jan@bedrijf.nl" />
         </div>
 
         <h2 className="text-lg font-semibold mb-4 text-gray-700">Projectdetails</h2>
         <div className="mb-4">
-          <label className="block text-sm font-medium mb-1">Projectomschrijving *</label>
-          <textarea name="projectomschrijving" value={form.projectomschrijving} onChange={handleChange}
+          <label htmlFor="projectomschrijving" className="block text-sm font-medium mb-1">Projectomschrijving *</label>
+          <textarea id="projectomschrijving" name="projectomschrijving" value={form.projectomschrijving} onChange={handleChange}
             rows={5} className="w-full border rounded-lg px-4 py-2"
             placeholder="Beschrijf wat het project inhoudt..." />
         </div>
         <div className="mb-4">
-          <label className="block text-sm font-medium mb-1">Gewenste technologieën</label>
-          <input name="technologieen" value={form.technologieen} onChange={handleChange}
+          <label htmlFor="technologieen" className="block text-sm font-medium mb-1">Gewenste technologieën</label>
+          <input id="technologieen" name="technologieen" value={form.technologieen} onChange={handleChange}
             className="w-full border rounded-lg px-4 py-2" placeholder="bijv. React, Python, Firebase" />
         </div>
         <div className="grid grid-cols-2 gap-4 mb-8">
           <div>
-            <label className="block text-sm font-medium mb-1">Deadline</label>
-            <input name="deadline" type="date" value={form.deadline} onChange={handleChange}
+            <label htmlFor="deadline" className="block text-sm font-medium mb-1">Deadline</label>
+            <input id="deadline" name="deadline" type="date" value={form.deadline} onChange={handleChange}
               className="w-full border rounded-lg px-4 py-2" />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Tijdsduur</label>
-            <input name="tijdsduur" value={form.tijdsduur} onChange={handleChange}
+            <label htmlFor="tijdsduur" className="block text-sm font-medium mb-1">Tijdsduur</label>
+            <input id="tijdsduur" name="tijdsduur" value={form.tijdsduur} onChange={handleChange}
               className="w-full border rounded-lg px-4 py-2" placeholder="bijv. 6 weken" />
           </div>
         </div>
