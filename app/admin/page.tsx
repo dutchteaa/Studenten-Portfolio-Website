@@ -3,8 +3,10 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { collection, getDocs, updateDoc, doc } from 'firebase/firestore';
+import { collection, getDocs, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+
+type ProjectType = 'website' | 'game' | 'hardware' | 'overig';
 
 interface Aanvraag {
   id: string;
@@ -25,14 +27,27 @@ interface Project {
   studentNaam: string;
   githubLink?: string;
   demoLink?: string;
+  type?: ProjectType;
 }
+
+const typeLabels: Record<string, string> = {
+  website: '🌐 Website',
+  game: '🎮 Game',
+  hardware: '🔧 Hardware',
+  overig: '📦 Overig',
+};
 
 export default function AdminPage() {
   const { role, loading } = useAuth();
   const router = useRouter();
+
   const [aanvragen, setAanvragen] = useState<Aanvraag[]>([]);
   const [projecten, setProjecten] = useState<Project[]>([]);
   const [actieveTab, setActieveTab] = useState<'aanvragen' | 'projecten'>('aanvragen');
+
+  // Project bewerken
+  const [bewerkProject, setBewerkProject] = useState<Project | null>(null);
+  const [bewerkForm, setBewerkForm] = useState({ titel: '', beschrijving: '', githubLink: '', demoLink: '', type: 'website' as ProjectType });
 
   useEffect(() => {
     if (!loading && role !== 'admin') router.push('/login');
@@ -58,6 +73,29 @@ export default function AdminPage() {
   async function statusWijzigen(id: string, nieuweStatus: string) {
     await updateDoc(doc(db, 'aanvragen', id), { status: nieuweStatus });
     laadAanvragen();
+  }
+
+  async function projectVerwijderen(id: string) {
+    await deleteDoc(doc(db, 'projecten', id));
+    laadProjecten();
+  }
+
+  function openBewerkProject(p: Project) {
+    setBewerkProject(p);
+    setBewerkForm({
+      titel: p.titel,
+      beschrijving: p.beschrijving,
+      githubLink: p.githubLink ?? '',
+      demoLink: p.demoLink ?? '',
+      type: p.type ?? 'website',
+    });
+  }
+
+  async function slaProjectOp() {
+    if (!bewerkProject) return;
+    await updateDoc(doc(db, 'projecten', bewerkProject.id), bewerkForm);
+    setBewerkProject(null);
+    laadProjecten();
   }
 
   if (loading) {
@@ -184,30 +222,129 @@ export default function AdminPage() {
         {actieveTab === 'projecten' && (
           <div className="space-y-4">
             {projecten.map((p, i) => (
-              <div
-                key={p.id}
-                className={`animate-fade-up animate-fade-up-${Math.min(i + 1, 5)} rounded-xl p-6`}
-                style={{ background: 'var(--bg-white)', border: '1px solid var(--border)' }}
-              >
-                <h3 className="text-lg font-semibold" style={{ color: 'var(--text-dark)' }}>{p.titel}</h3>
-                <p className="text-sm mt-0.5" style={{ color: 'var(--text-muted)' }}>Door: {p.studentNaam}</p>
-                <p className="mt-2 text-sm leading-relaxed" style={{ color: 'var(--text-dark)' }}>{p.beschrijving}</p>
-                <div className="flex gap-3 mt-3">
-                  {p.githubLink && (
-                    <a href={p.githubLink} target="_blank" rel="noopener noreferrer"
-                      className="text-xs font-semibold px-3 py-1.5 rounded-lg"
-                      style={{ background: 'var(--surface-dark)', color: 'var(--text-on-dark)' }}>
-                      GitHub
-                    </a>
-                  )}
-                  {p.demoLink && (
-                    <a href={p.demoLink} target="_blank" rel="noopener noreferrer"
-                      className="text-xs font-semibold px-3 py-1.5 rounded-lg"
-                      style={{ background: 'var(--accent)', color: '#fff' }}>
-                      Live demo
-                    </a>
-                  )}
-                </div>
+              <div key={p.id}>
+                {/* Bewerk modal inline */}
+                {bewerkProject?.id === p.id ? (
+                  <div
+                    className="animate-fade-up rounded-xl p-6"
+                    style={{ background: 'var(--bg-white)', border: '2px solid var(--accent)' }}
+                  >
+                    <h3
+                      className="text-xs font-semibold uppercase tracking-widest mb-4"
+                      style={{ color: 'var(--accent)', fontFamily: 'JetBrains Mono, monospace' }}
+                    >
+                      Project bewerken
+                    </h3>
+                    <div className="space-y-3">
+                      <input
+                        placeholder="Titel"
+                        value={bewerkForm.titel}
+                        onChange={e => setBewerkForm({ ...bewerkForm, titel: e.target.value })}
+                        className="input-themed"
+                      />
+                      <textarea
+                        placeholder="Beschrijving"
+                        value={bewerkForm.beschrijving}
+                        onChange={e => setBewerkForm({ ...bewerkForm, beschrijving: e.target.value })}
+                        rows={3}
+                        className="input-themed"
+                      />
+                      <div className="flex gap-2 flex-wrap">
+                        {(['website', 'game', 'hardware', 'overig'] as ProjectType[]).map(t => (
+                          <button
+                            key={t}
+                            onClick={() => setBewerkForm({ ...bewerkForm, type: t })}
+                            className="text-sm px-3 py-1.5 rounded-lg font-medium"
+                            style={
+                              bewerkForm.type === t
+                                ? { background: 'var(--accent)', color: '#fff' }
+                                : { background: 'var(--bg)', color: 'var(--text-muted)', border: '1px solid var(--border)' }
+                            }
+                          >
+                            {typeLabels[t]}
+                          </button>
+                        ))}
+                      </div>
+                      <input
+                        placeholder="GitHub link"
+                        value={bewerkForm.githubLink}
+                        onChange={e => setBewerkForm({ ...bewerkForm, githubLink: e.target.value })}
+                        className="input-themed"
+                      />
+                      <input
+                        placeholder="Live demo link"
+                        value={bewerkForm.demoLink}
+                        onChange={e => setBewerkForm({ ...bewerkForm, demoLink: e.target.value })}
+                        className="input-themed"
+                      />
+                    </div>
+                    <div className="flex gap-3 mt-4">
+                      <button onClick={slaProjectOp} className="btn-accent text-sm">Opslaan</button>
+                      <button
+                        onClick={() => setBewerkProject(null)}
+                        className="text-sm px-4 py-2 rounded-lg font-medium"
+                        style={{ background: 'var(--bg)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
+                      >
+                        Annuleren
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    className={`animate-fade-up animate-fade-up-${Math.min(i + 1, 5)} rounded-xl p-6`}
+                    style={{ background: 'var(--bg-white)', border: '1px solid var(--border)' }}
+                  >
+                    <div className="flex justify-between items-start gap-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                          <h3 className="text-lg font-semibold" style={{ color: 'var(--text-dark)' }}>{p.titel}</h3>
+                          {p.type && (
+                            <span
+                              className="text-xs px-2 py-0.5 rounded-full font-medium"
+                              style={{ background: 'var(--accent-glow)', color: 'var(--accent)' }}
+                            >
+                              {typeLabels[p.type] ?? p.type}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm mt-0.5" style={{ color: 'var(--text-muted)' }}>Door: {p.studentNaam}</p>
+                        <p className="mt-2 text-sm leading-relaxed line-clamp-2" style={{ color: 'var(--text-dark)' }}>{p.beschrijving}</p>
+                        <div className="flex gap-3 mt-3">
+                          {p.githubLink && (
+                            <a href={p.githubLink} target="_blank" rel="noopener noreferrer"
+                              className="text-xs font-semibold px-3 py-1.5 rounded-lg"
+                              style={{ background: 'var(--surface-dark)', color: 'var(--text-on-dark)' }}>
+                              GitHub
+                            </a>
+                          )}
+                          {p.demoLink && (
+                            <a href={p.demoLink} target="_blank" rel="noopener noreferrer"
+                              className="text-xs font-semibold px-3 py-1.5 rounded-lg"
+                              style={{ background: 'var(--accent)', color: '#fff' }}>
+                              Live demo
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex gap-2 shrink-0">
+                        <button
+                          onClick={() => openBewerkProject(p)}
+                          className="text-xs font-medium px-3 py-1.5 rounded-lg"
+                          style={{ color: '#1e40af', background: '#dbeafe' }}
+                        >
+                          Bewerken
+                        </button>
+                        <button
+                          onClick={() => projectVerwijderen(p.id)}
+                          className="text-xs font-medium px-3 py-1.5 rounded-lg"
+                          style={{ color: '#991b1b', background: '#fee2e2' }}
+                        >
+                          Verwijderen
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>

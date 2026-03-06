@@ -1,20 +1,24 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { register } from '@/lib/auth';
 
 export default function RegisterPage() {
-  const router = useRouter();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
 
   async function handleRegister() {
+    setError('');
+    if (!email.toLowerCase().endsWith('@novacollege.nl')) {
+      setError('Alleen @novacollege.nl e-mailadressen zijn toegestaan.');
+      return;
+    }
     try {
       await register(email, password, name);
-      router.push('/dashboard');
+      setSuccess(true);
     } catch (err: unknown) {
       if (err instanceof Error) {
         setError(err.message);
@@ -22,6 +26,34 @@ export default function RegisterPage() {
         setError('Er ging iets mis bij het registreren.');
       }
     }
+  }
+
+  if (success) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4 bg-grid" style={{ background: 'var(--bg)' }}>
+        <div
+          className="animate-scale-in w-full max-w-md rounded-2xl p-8 shadow-lg text-center"
+          style={{ background: 'var(--bg-white)', border: '1px solid var(--border)' }}
+        >
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-5 text-3xl"
+            style={{ background: 'var(--accent-glow)' }}>
+            ✉️
+          </div>
+          <h1 className="text-2xl font-bold mb-2" style={{ color: 'var(--text-dark)' }}>Verifieer je e-mail</h1>
+          <p className="text-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+            We hebben een verificatie-e-mail gestuurd naar <strong>{email}</strong>.
+            Klik op de link in de e-mail om je account te activeren, en log daarna in.
+          </p>
+          <a
+            href="/login"
+            className="btn-accent block w-full mt-6 text-center"
+            style={{ padding: '0.75rem' }}
+          >
+            Naar inloggen
+          </a>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -44,8 +76,13 @@ export default function RegisterPage() {
         <div className="space-y-4">
           <input type="text" placeholder="Volledige naam" value={name} onChange={e => setName(e.target.value)}
             className="input-themed" />
-          <input type="email" placeholder="E-mailadres" value={email} onChange={e => setEmail(e.target.value)}
-            className="input-themed" />
+          <div>
+            <input type="email" placeholder="E-mailadres (@novacollege.nl)" value={email} onChange={e => setEmail(e.target.value)}
+              className="input-themed" />
+            <p className="text-xs mt-1 px-1" style={{ color: 'var(--text-muted)' }}>
+              Alleen Nova College e-mailadressen zijn toegestaan
+            </p>
+          </div>
           <input type="password" placeholder="Wachtwoord (min. 6 tekens)" value={password} onChange={e => setPassword(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleRegister()}
             className="input-themed" />
