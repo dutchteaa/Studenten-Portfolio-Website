@@ -48,6 +48,7 @@ export default function AdminPage() {
   // Project bewerken
   const [bewerkProject, setBewerkProject] = useState<Project | null>(null);
   const [bewerkForm, setBewerkForm] = useState({ titel: '', beschrijving: '', githubLink: '', demoLink: '', type: 'website' as ProjectType });
+  const [opslaanFout, setOpslaanFout] = useState('');
 
   useEffect(() => {
     if (!loading && role !== 'admin') router.push('/login');
@@ -93,9 +94,14 @@ export default function AdminPage() {
 
   async function slaProjectOp() {
     if (!bewerkProject) return;
-    await updateDoc(doc(db, 'projecten', bewerkProject.id), bewerkForm);
-    setBewerkProject(null);
-    laadProjecten();
+    setOpslaanFout('');
+    try {
+      await updateDoc(doc(db, 'projecten', bewerkProject.id), bewerkForm);
+      setBewerkProject(null);
+      laadProjecten();
+    } catch (err: unknown) {
+      setOpslaanFout(err instanceof Error ? err.message : 'Opslaan mislukt. Controleer je Firestore-regels.');
+    }
   }
 
   if (loading) {
@@ -278,10 +284,15 @@ export default function AdminPage() {
                         className="input-themed"
                       />
                     </div>
+                    {opslaanFout && (
+                      <p className="text-sm mt-3 px-3 py-2 rounded-lg" style={{ background: '#fee2e2', color: '#991b1b' }}>
+                        {opslaanFout}
+                      </p>
+                    )}
                     <div className="flex gap-3 mt-4">
                       <button onClick={slaProjectOp} className="btn-accent text-sm">Opslaan</button>
                       <button
-                        onClick={() => setBewerkProject(null)}
+                        onClick={() => { setBewerkProject(null); setOpslaanFout(''); }}
                         className="text-sm px-4 py-2 rounded-lg font-medium"
                         style={{ background: 'var(--bg)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
                       >
