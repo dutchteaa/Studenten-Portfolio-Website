@@ -145,13 +145,22 @@ export default function DashboardPage() {
 
   async function opslaan() {
     if (!form.titel || !form.beschrijving || !user) return;
+
+    const eigenaarId = bewerkId
+      ? projecten.find(p => p.id === bewerkId)?.studentId ?? user.uid
+      : user.uid;
+    const eigenaarNaam = naam ?? user.email ?? '';
+
+    // Zorg dat de eigenaar altijd als eerste in leden staat
+    const eigenaarLid: Lid = { uid: eigenaarId, naam: eigenaarNaam, email: user.email ?? '' };
+    const alleLedenZonderEigenaar = formulierLeden.filter(l => l.uid !== eigenaarId);
+    const alleLeden = [eigenaarLid, ...alleLedenZonderEigenaar];
+
     const data = {
       ...form,
-      leden: formulierLeden,
-      studentId: bewerkId
-        ? projecten.find(p => p.id === bewerkId)?.studentId ?? user.uid
-        : user.uid,
-      studentNaam: naam ?? user.email ?? '',
+      leden: alleLeden,
+      studentId: eigenaarId,
+      studentNaam: eigenaarNaam,
     };
     if (bewerkId) {
       await updateDoc(doc(db, 'projecten', bewerkId), data);

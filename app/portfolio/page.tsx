@@ -6,6 +6,12 @@ import { db } from '@/lib/firebase';
 
 type ProjectType = 'website' | 'game' | 'hardware' | 'overig';
 
+interface Lid {
+  uid: string;
+  naam: string;
+  email: string;
+}
+
 interface Project {
   id: string;
   titel: string;
@@ -15,6 +21,7 @@ interface Project {
   afbeeldingUrl: string;
   studentNaam: string;
   type?: ProjectType;
+  leden?: Lid[];
 }
 
 const typeLabels: Record<string, string> = {
@@ -148,7 +155,11 @@ export default function PortfolioPage() {
                     </span>
                   )}
                 </div>
-                <p className="text-xs mt-1 font-mono" style={{ color: 'var(--accent)' }}>Door {project.studentNaam}</p>
+                <p className="text-xs mt-1 font-mono" style={{ color: 'var(--accent)' }}>
+                  {(project.leden && project.leden.length > 0)
+                    ? project.leden.map(l => l.naam).join(', ')
+                    : project.studentNaam}
+                </p>
                 <p className="mt-3 text-sm leading-relaxed line-clamp-3" style={{ color: 'var(--text-muted)' }}>
                   {project.beschrijving}
                 </p>
