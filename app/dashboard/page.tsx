@@ -44,7 +44,7 @@ const typeLabels: Record<ProjectType, string> = {
 };
 
 export default function DashboardPage() {
-  const { user, loading } = useAuth();
+  const { user, naam, loading } = useAuth();
   const router = useRouter();
 
   const [projecten, setProjecten] = useState<Project[]>([]);
@@ -151,7 +151,7 @@ export default function DashboardPage() {
       studentId: bewerkId
         ? projecten.find(p => p.id === bewerkId)?.studentId ?? user.uid
         : user.uid,
-      studentNaam: user.displayName ?? user.email,
+      studentNaam: naam ?? user.email ?? '',
     };
     if (bewerkId) {
       await updateDoc(doc(db, 'projecten', bewerkId), data);
@@ -224,7 +224,7 @@ export default function DashboardPage() {
               Student Dashboard
             </div>
             <h1 className="text-3xl font-bold" style={{ color: 'var(--text-dark)' }}>Mijn Portfolio</h1>
-            <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>{user?.email}</p>
+            <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>{naam ?? user?.email}</p>
           </div>
           {!toonFormulier && (
             <button onClick={openNieuwFormulier} className="btn-accent text-sm">
