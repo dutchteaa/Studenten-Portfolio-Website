@@ -21,16 +21,16 @@ export default function Navbar() {
           <div className="w-8 h-8 bg-[#117e7d] rounded-lg flex items-center justify-center font-mono font-bold text-white text-sm">
             SP
           </div>
-          <span className="font-semibold text-[#e8ecf0]">
+          <span className="font-semibold text-[#e8ecf0] text-base">
             Studenten<span className="text-[#1a9e9d]">Portfolio</span>
           </span>
         </Link>
 
         <div className="flex items-center gap-1">
-          <Link href="/portfolio" className="text-[#8b99a8] hover:text-[#e8ecf0] hover:bg-[#1a2027] px-4 py-2 rounded-lg text-sm font-medium transition-all">
+          <Link href="/portfolio" className="text-[#8b99a8] hover:text-[#e8ecf0] hover:bg-[#1a2027] px-3 py-2 rounded-lg text-sm font-medium transition-all">
             Portfolio
           </Link>
-          <Link href="/aanvraag" className="text-[#8b99a8] hover:text-[#e8ecf0] hover:bg-[#1a2027] px-4 py-2 rounded-lg text-sm font-medium transition-all">
+          <Link href="/aanvraag" className="text-[#8b99a8] hover:text-[#e8ecf0] hover:bg-[#1a2027] px-3 py-2 rounded-lg text-sm font-medium transition-all">
             Aanvragen
           </Link>
 
@@ -38,12 +38,11 @@ export default function Navbar() {
             <>
               <Link
                 href={role === 'admin' ? '/admin' : '/dashboard'}
-                className="text-[#8b99a8] hover:text-[#e8ecf0] hover:bg-[#1a2027] px-4 py-2 rounded-lg text-sm font-medium transition-all"
+                className="text-[#8b99a8] hover:text-[#e8ecf0] hover:bg-[#1a2027] px-3 py-2 rounded-lg text-sm font-medium transition-all"
               >
                 Dashboard
               </Link>
               <button
-                type="button"
                 onClick={handleLogout}
                 className="ml-2 bg-[#1a2027] text-[#e8ecf0] px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#2a3540] transition-all border border-[#2a3540]"
               >

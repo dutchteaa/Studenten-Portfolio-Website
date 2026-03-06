@@ -1,26 +1,73 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap');
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --accent: #117e7d;
+  --accent-light: #1a9e9d;
+  --accent-glow: rgba(17, 126, 125, 0.15);
+  --accent-glow-strong: rgba(17, 126, 125, 0.3);
+  --bg: #f4f5f7;
+  --bg-white: #ffffff;
+  --surface-dark: #0f1419;
+  --surface-dark-lighter: #1a2027;
+  --surface-dark-border: #2a3540;
+  --text-dark: #0f1419;
+  --text-muted: #5c6975;
+  --text-on-dark: #e8ecf0;
+  --text-on-dark-muted: #8b99a8;
+  --border: #e2e5ea;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-background: var(--bg);
+  --color-foreground: var(--text-dark);
+  --font-sans: 'Outfit', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--text-dark);
+  font-family: 'Outfit', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Utility animations */
+@keyframes fadeUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.animate-fade-up {
+  animation: fadeUp 0.6s ease both;
+}
+.animate-fade-up-1 { animation-delay: 0.1s; }
+.animate-fade-up-2 { animation-delay: 0.2s; }
+.animate-fade-up-3 { animation-delay: 0.3s; }
+.animate-fade-up-4 { animation-delay: 0.4s; }
+.animate-fade-up-5 { animation-delay: 0.5s; }
+
+.animate-pulse-dot {
+  animation: pulse-dot 2s infinite;
+}
+
+/* Shared input focus style */
+.input-themed {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 0.625rem 1rem;
+  font-size: 0.875rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  outline: none;
+  font-family: 'Outfit', sans-serif;
+}
+.input-themed:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-glow);
 }

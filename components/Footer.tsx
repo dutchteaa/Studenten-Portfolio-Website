@@ -3,7 +3,7 @@ import Link from 'next/link';
 export default function Footer() {
   return (
     <footer className="bg-[#0f1419] border-t border-[#2a3540]">
-      <div className="max-w-6xl mx-auto px-4 py-6 flex justify-between items-center">
+      <div className="max-w-6xl mx-auto px-4 py-6 flex flex-col sm:flex-row justify-between items-center gap-4">
         <p className="text-[#8b99a8] text-sm font-mono">
           © 2025 <span className="text-[#1a9e9d]">StudentenPortfolio</span> — Smart ICT Nova College
         </p>

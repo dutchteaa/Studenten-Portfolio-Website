@@ -27,13 +27,13 @@ export default function ProjectCard({ titel, beschrijving, studentNaam, githubLi
         {(githubLink || demoLink) && (
           <div className="flex gap-2 mt-4 pt-4 border-t border-[#2a3540]">
             {githubLink && (
-              <a href={githubLink} target="_blank"
+              <a href={githubLink} target="_blank" rel="noopener noreferrer"
                 className="text-sm bg-[#1a2027] text-[#e8ecf0] px-3 py-1.5 rounded-lg hover:bg-[#2a3540] transition-colors border border-[#2a3540]">
                 GitHub
               </a>
             )}
             {demoLink && (
-              <a href={demoLink} target="_blank"
+              <a href={demoLink} target="_blank" rel="noopener noreferrer"
                 className="text-sm bg-[#117e7d] text-white px-3 py-1.5 rounded-lg hover:bg-[#1a9e9d] transition-colors">
                 Live demo
               </a>

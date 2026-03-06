@@ -1,12 +1,10 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { AuthProvider } from '@/context/AuthContext';
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
 
 export const metadata: Metadata = {
-  title: 'Studenten Portfolio',
-  description: 'Portfolio platform voor studenten en bedrijven',
+  title: 'Studenten Portfolio — Smart ICT Nova College',
+  description: 'Portfolio platform voor studenten en bedrijven. Bekijk projecten of vraag een project aan.',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -14,9 +12,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="nl">
       <body>
         <AuthProvider>
-          <Navbar />
           {children}
-          <Footer />
         </AuthProvider>
       </body>
     </html>
