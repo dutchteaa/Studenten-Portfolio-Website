@@ -27,43 +27,107 @@ export default function PortfolioPage() {
     laadProjecten();
   }, []);
 
-  if (loading) return <p className="p-8 text-center">Laden...</p>;
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg)' }}>
+        <div className="badge-accent">
+          <span className="w-1.5 h-1.5 rounded-full animate-pulse-dot" style={{ background: 'var(--accent)' }} />
+          Laden...
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4">
+    <div className="min-h-screen py-12 px-4" style={{ background: 'var(--bg)' }}>
+
+      {/* Nav hint */}
+      <div className="max-w-5xl mx-auto mb-8">
+        <a href="/" className="text-sm transition-colors hover:text-[#117e7d]" style={{ color: 'var(--text-muted)' }}>
+          ← Terug naar home
+        </a>
+      </div>
+
+      {/* Header */}
+      <div className="max-w-5xl mx-auto text-center mb-14">
+        <div className="badge-accent justify-center mb-5">
+          <span className="w-1.5 h-1.5 rounded-full animate-pulse-dot" style={{ background: 'var(--accent)' }} />
+          Studentenprojecten
+        </div>
+        <h1 className="animate-fade-up text-4xl font-bold" style={{ color: 'var(--text-dark)' }}>
+          Studentenportfolio
+        </h1>
+        <p className="animate-fade-up animate-fade-up-2 mt-3 text-lg" style={{ color: 'var(--text-muted)' }}>
+          Bekijk de projecten die onze studenten hebben gemaakt
+        </p>
+      </div>
+
       <div className="max-w-5xl mx-auto">
 
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900">Studentenportfolio</h1>
-          <p className="text-gray-500 mt-3 text-lg">Bekijk de projecten die onze studenten hebben gemaakt</p>
-        </div>
-
         {projecten.length === 0 && (
-          <p className="text-center text-gray-400 py-12">Er zijn nog geen projecten gepubliceerd.</p>
+          <div
+            className="text-center py-16 rounded-2xl"
+            style={{ background: 'var(--bg-white)', border: '1px dashed var(--border)' }}
+          >
+            <div
+              className="w-14 h-14 rounded-xl flex items-center justify-center mx-auto mb-4 text-2xl"
+              style={{ background: 'var(--accent-glow)' }}
+            >
+              📁
+            </div>
+            <p style={{ color: 'var(--text-muted)' }}>Er zijn nog geen projecten gepubliceerd.</p>
+          </div>
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {projecten.map(project => (
-            <div key={project.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+          {projecten.map((project, i) => (
+            <div
+              key={project.id}
+              className={`animate-fade-up animate-fade-up-${Math.min(i + 1, 5)} card-hover rounded-xl overflow-hidden`}
+              style={{ background: 'var(--bg-white)', border: '1px solid var(--border)' }}
+            >
               {project.afbeeldingUrl ? (
                 <img src={project.afbeeldingUrl} alt={project.titel} className="w-full h-48 object-cover" />
               ) : (
-                <div className="w-full h-48 bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
-                  <span className="text-blue-400 text-4xl">📁</span>
+                <div
+                  className="w-full h-48 flex items-center justify-center text-4xl"
+                  style={{ background: 'var(--accent-glow)' }}
+                >
+                  📁
                 </div>
               )}
               <div className="p-5">
-                <h2 className="text-xl font-semibold">{project.titel}</h2>
-                <p className="text-sm text-gray-500 mt-1">Door {project.studentNaam}</p>
-                <p className="text-gray-600 mt-3 text-sm line-clamp-3">{project.beschrijving}</p>
+                <h2 className="text-lg font-semibold" style={{ color: 'var(--text-dark)' }}>
+                  {project.titel}
+                </h2>
+                <p className="text-xs mt-1 font-mono" style={{ color: 'var(--accent)' }}>
+                  Door {project.studentNaam}
+                </p>
+                <p className="mt-3 text-sm leading-relaxed line-clamp-3" style={{ color: 'var(--text-muted)' }}>
+                  {project.beschrijving}
+                </p>
                 <div className="flex gap-3 mt-4">
                   {project.githubLink && (
-                    <a href={project.githubLink} target="_blank" rel="noopener noreferrer"
-                      className="text-sm bg-gray-900 text-white px-3 py-1 rounded-lg hover:bg-gray-700">GitHub</a>
+                    <a
+                      href={project.githubLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors hover:opacity-80"
+                      style={{ background: 'var(--surface-dark)', color: 'var(--text-on-dark)' }}
+                    >
+                      GitHub
+                    </a>
                   )}
                   {project.demoLink && (
-                    <a href={project.demoLink} target="_blank" rel="noopener noreferrer"
-                      className="text-sm bg-blue-600 text-white px-3 py-1 rounded-lg hover:bg-blue-700">Live demo</a>
+                    <a
+                      href={project.demoLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors hover:opacity-80"
+                      style={{ background: 'var(--accent)', color: '#fff' }}
+                    >
+                      Live demo
+                    </a>
                   )}
                 </div>
               </div>
@@ -71,10 +135,22 @@ export default function PortfolioPage() {
           ))}
         </div>
 
-        <div className="mt-16 text-center bg-white rounded-lg shadow p-8">
-          <h2 className="text-2xl font-bold">Bent u een bedrijf?</h2>
-          <p className="text-gray-500 mt-2">Vraag een project aan en laat onze studenten aan de slag gaan.</p>
-          <a href="/aanvraag" className="inline-block mt-4 bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700">
+        {/* CTA */}
+        <div
+          className="mt-16 rounded-2xl p-10 text-center"
+          style={{ background: 'var(--surface-dark)', border: '1px solid var(--surface-dark-border)' }}
+        >
+          <div className="badge-accent justify-center mb-4">
+            <span className="w-1.5 h-1.5 rounded-full animate-pulse-dot" style={{ background: 'var(--accent)' }} />
+            Voor bedrijven
+          </div>
+          <h2 className="text-2xl font-bold mb-3" style={{ color: 'var(--text-on-dark)' }}>
+            Bent u een bedrijf?
+          </h2>
+          <p className="mb-6" style={{ color: 'var(--text-on-dark-muted)' }}>
+            Vraag een project aan en laat onze studenten aan de slag gaan.
+          </p>
+          <a href="/aanvraag" className="btn-accent">
             Project aanvragen
           </a>
         </div>
