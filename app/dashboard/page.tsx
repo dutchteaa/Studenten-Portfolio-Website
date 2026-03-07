@@ -219,7 +219,16 @@ export default function DashboardPage() {
   }
 
   async function opslaan() {
-    if (!form.titel || !form.beschrijving || !user) return;
+    if (!form.titel || !form.beschrijving || !user) {
+      if (!form.titel && !form.beschrijving) {
+        setOpslaanFout('Vul een titel en beschrijving in.');
+      } else if (!form.titel) {
+        setOpslaanFout('Vul een projecttitel in.');
+      } else {
+        setOpslaanFout('Vul een beschrijving in.');
+      }
+      return;
+    }
 
     setOpslaanBezig(true);
     setOpslaanFout('');
