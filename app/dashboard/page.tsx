@@ -71,6 +71,10 @@ export default function DashboardPage() {
   const [ledenZoekLoading, setLedenZoekLoading] = useState(false);
   const [formulierLeden, setFormulierLeden] = useState<Lid[]>([]);
 
+  // Save state
+  const [opslaan_bezig, setOpslaanBezig] = useState(false);
+  const [opslaanFout, setOpslaanFout] = useState('');
+
   // Email verification
   const [verificatieSent, setVerificatieSent] = useState(false);
 
@@ -181,6 +185,8 @@ export default function DashboardPage() {
     setFormulierLeden([]);
     setLedenZoek('');
     setLedenZoekResultaat(null);
+    setOpslaanFout('');
+    setOpslaanBezig(false);
     verwijderMedia();
   }
 
@@ -215,48 +221,58 @@ export default function DashboardPage() {
   async function opslaan() {
     if (!form.titel || !form.beschrijving || !user) return;
 
-    const eigenaarId = bewerkId
-      ? projecten.find(p => p.id === bewerkId)?.studentId ?? user.uid
-      : user.uid;
-    const eigenaarNaam = naam ?? user.email ?? '';
+    setOpslaanBezig(true);
+    setOpslaanFout('');
 
-    const eigenaarLid: Lid = { uid: eigenaarId, naam: eigenaarNaam, email: user.email ?? '' };
-    const alleLedenZonderEigenaar = formulierLeden.filter(l => l.uid !== eigenaarId);
-    const alleLeden = [eigenaarLid, ...alleLedenZonderEigenaar];
+    try {
+      const eigenaarId = bewerkId
+        ? projecten.find(p => p.id === bewerkId)?.studentId ?? user.uid
+        : user.uid;
+      const eigenaarNaam = naam ?? user.email ?? '';
 
-    let mediaUrl = form.afbeeldingUrl;
-    let mediaType: MediaType | undefined = mediaFileType ?? undefined;
+      const eigenaarLid: Lid = { uid: eigenaarId, naam: eigenaarNaam, email: user.email ?? '' };
+      const alleLedenZonderEigenaar = formulierLeden.filter(l => l.uid !== eigenaarId);
+      const alleLeden = [eigenaarLid, ...alleLedenZonderEigenaar];
 
-    if (mediaBestand) {
-      try {
-        const result = await uploadMedia(mediaBestand);
-        mediaUrl = result.url;
-        mediaType = result.type;
-      } catch {
-        setUploadFout('Upload mislukt. Controleer je Firebase Storage regels.');
-        return;
+      let mediaUrl = form.afbeeldingUrl;
+      let mediaType: MediaType | undefined = mediaFileType ?? undefined;
+
+      if (mediaBestand) {
+        try {
+          const result = await uploadMedia(mediaBestand);
+          mediaUrl = result.url;
+          mediaType = result.type;
+        } catch {
+          setUploadFout('Upload mislukt. Controleer je Firebase Storage regels.');
+          setOpslaanBezig(false);
+          return;
+        }
       }
-    }
 
-    const data = {
-      ...form,
-      afbeeldingUrl: mediaUrl,
-      mediaType: mediaType ?? null,
-      leden: alleLeden,
-      studentId: eigenaarId,
-      studentNaam: eigenaarNaam,
-    };
+      const data = {
+        ...form,
+        afbeeldingUrl: mediaUrl,
+        mediaType: mediaType ?? null,
+        leden: alleLeden,
+        studentId: eigenaarId,
+        studentNaam: eigenaarNaam,
+      };
 
-    if (bewerkId) {
-      await updateDoc(doc(db, 'projecten', bewerkId), data);
-    } else {
-      await addDoc(collection(db, 'projecten'), {
-        ...data,
-        gepubliceerdOp: new Date().toISOString(),
-      });
+      if (bewerkId) {
+        await updateDoc(doc(db, 'projecten', bewerkId), data);
+      } else {
+        await addDoc(collection(db, 'projecten'), {
+          ...data,
+          gepubliceerdOp: new Date().toISOString(),
+        });
+      }
+      sluitFormulier();
+      laadProjecten();
+    } catch (err) {
+      console.error('Opslaan mislukt:', err);
+      setOpslaanFout('Opslaan mislukt. Controleer je internetverbinding en Firebase-rechten.');
+      setOpslaanBezig(false);
     }
-    sluitFormulier();
-    laadProjecten();
   }
 
   async function projectVerwijderen(id: string) {
@@ -473,11 +489,21 @@ export default function DashboardPage() {
               </div>
             </div>
 
+            {opslaanFout && (
+              <p className="text-xs mt-4 px-3 py-2 rounded-lg" style={{ background: '#fee2e2', color: '#991b1b' }}>
+                {opslaanFout}
+              </p>
+            )}
+
             <div className="flex gap-3 mt-5">
-              <button onClick={opslaan} disabled={uploadProgress !== null} className="btn-accent text-sm">
-                {uploadProgress !== null ? `Uploaden ${uploadProgress}%` : bewerkId ? 'Opslaan' : 'Publiceren'}
+              <button onClick={opslaan} disabled={uploadProgress !== null || opslaan_bezig} className="btn-accent text-sm">
+                {uploadProgress !== null
+                  ? `Uploaden ${uploadProgress}%`
+                  : opslaan_bezig
+                  ? 'Bezig...'
+                  : bewerkId ? 'Opslaan' : 'Publiceren'}
               </button>
-              <button onClick={sluitFormulier}
+              <button onClick={sluitFormulier} disabled={opslaan_bezig}
                 className="text-sm px-5 py-2 rounded-lg font-medium transition-colors"
                 style={{ background: 'var(--bg)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
                 Annuleren
