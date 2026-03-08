@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { collection, getDocs, query, where, updateDoc, doc, arrayUnion } from 'firebase/firestore';
-import { useRouter } from 'next/navigation';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/context/AuthContext';
 
@@ -28,7 +27,6 @@ interface Aanvraag {
 
 export default function OpdrachtenPage() {
   const { user, naam, role } = useAuth();
-  const router = useRouter();
   const [aanvragen, setAanvragen] = useState<Aanvraag[]>([]);
   const [loading, setLoading] = useState(true);
   const [claimingId, setClaimingId] = useState<string | null>(null);
@@ -48,10 +46,6 @@ export default function OpdrachtenPage() {
 
   async function claimOpdracht(id: string) {
     if (!user) return;
-    if (!user.emailVerified) {
-      router.push('/dashboard');
-      return;
-    }
     setClaimingId(id);
     const claim: Claim = {
       uid: user.uid,
@@ -213,15 +207,7 @@ export default function OpdrachtenPage() {
                         </div>
 
                         {/* Claim / Unclaim — only for logged-in users */}
-                        {user && !user.emailVerified && (
-                          <div
-                            className="rounded-lg px-3 py-2 text-xs font-medium"
-                            style={{ background: '#fffbeb', border: '1px solid #fcd34d', color: '#92400e' }}
-                          >
-                            Verifieer je e-mail om te claimen
-                          </div>
-                        )}
-                        {user && user.emailVerified && (
+                        {user && (
                           alGeclaimd ? (
                             <div className="flex flex-col gap-2">
                               <span className="text-sm font-semibold px-4 py-2.5 rounded-xl text-center"

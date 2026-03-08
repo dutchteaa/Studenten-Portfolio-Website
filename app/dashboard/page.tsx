@@ -8,7 +8,6 @@ import {
   deleteDoc, doc, updateDoc,
 } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
-import { sendEmailVerification } from 'firebase/auth';
 import { db, storage } from '@/lib/firebase';
 
 type ProjectType = 'website' | 'game' | 'hardware' | 'overig';
@@ -74,9 +73,6 @@ export default function DashboardPage() {
   // Save state
   const [opslaan_bezig, setOpslaanBezig] = useState(false);
   const [opslaanFout, setOpslaanFout] = useState('');
-
-  // Email verification
-  const [verificatieSent, setVerificatieSent] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) router.push('/login');
@@ -289,12 +285,6 @@ export default function DashboardPage() {
     laadProjecten();
   }
 
-  async function stuurVerificatie() {
-    if (!user) return;
-    await sendEmailVerification(user);
-    setVerificatieSent(true);
-  }
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg)' }}>
@@ -309,24 +299,6 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen p-8" style={{ background: 'var(--bg)' }}>
       <div className="max-w-4xl mx-auto">
-
-        {/* E-mail verificatie banner */}
-        {user && !user.emailVerified && (
-          <div className="animate-fade-up mb-6 rounded-xl px-5 py-4 flex items-center justify-between gap-4"
-            style={{ background: '#fffbeb', border: '1px solid #fcd34d' }}>
-            <div>
-              <p className="text-sm font-semibold" style={{ color: '#92400e' }}>⚠️ E-mail niet geverifieerd</p>
-              <p className="text-xs mt-0.5" style={{ color: '#b45309' }}>
-                Verifieer je e-mailadres om volledige toegang te krijgen. Controleer je inbox bij {user.email}.
-              </p>
-            </div>
-            <button onClick={stuurVerificatie} disabled={verificatieSent}
-              className="text-xs font-semibold px-4 py-2 rounded-lg whitespace-nowrap"
-              style={{ background: verificatieSent ? '#fcd34d' : '#f59e0b', color: '#fff' }}>
-              {verificatieSent ? 'Verstuurd ✓' : 'Opnieuw sturen'}
-            </button>
-          </div>
-        )}
 
         {/* Header */}
         <div className="animate-fade-up flex justify-between items-center mb-8">
