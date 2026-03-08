@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { collection, getDocs, query, where, updateDoc, doc, arrayUnion } from 'firebase/firestore';
+import { useRouter } from 'next/navigation';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/context/AuthContext';
 
@@ -27,9 +28,11 @@ interface Aanvraag {
 
 export default function OpdrachtenPage() {
   const { user, naam, role } = useAuth();
+  const router = useRouter();
   const [aanvragen, setAanvragen] = useState<Aanvraag[]>([]);
   const [loading, setLoading] = useState(true);
   const [claimingId, setClaimingId] = useState<string | null>(null);
+  const [unclaimingId, setUnclaimingId] = useState<string | null>(null);
   const [openClaims, setOpenClaims] = useState<string | null>(null);
 
   async function laadAanvragen() {
@@ -45,6 +48,10 @@ export default function OpdrachtenPage() {
 
   async function claimOpdracht(id: string) {
     if (!user) return;
+    if (!user.emailVerified) {
+      router.push('/dashboard');
+      return;
+    }
     setClaimingId(id);
     const claim: Claim = {
       uid: user.uid,
@@ -57,6 +64,15 @@ export default function OpdrachtenPage() {
     });
     await laadAanvragen();
     setClaimingId(null);
+  }
+
+  async function unclaimOpdracht(aanvraag: Aanvraag) {
+    if (!user) return;
+    setUnclaimingId(aanvraag.id);
+    const newClaims = (aanvraag.claims ?? []).filter(c => c.uid !== user.uid);
+    await updateDoc(doc(db, 'aanvragen', aanvraag.id), { claims: newClaims });
+    await laadAanvragen();
+    setUnclaimingId(null);
   }
 
   function heeftGeclaimd(a: Aanvraag) {
@@ -196,20 +212,41 @@ export default function OpdrachtenPage() {
                           </a>
                         </div>
 
-                        {/* Claim button — only for logged-in users */}
-                        {user && (
-                          <button
-                            onClick={() => !alGeclaimd && claimOpdracht(a.id)}
-                            disabled={alGeclaimd || claimingId === a.id}
-                            className="text-sm font-semibold px-4 py-2.5 rounded-xl transition-all"
-                            style={
-                              alGeclaimd
-                                ? { background: '#dcfce7', color: '#166534', cursor: 'default' }
-                                : { background: 'var(--accent)', color: '#fff' }
-                            }
+                        {/* Claim / Unclaim — only for logged-in users */}
+                        {user && !user.emailVerified && (
+                          <div
+                            className="rounded-lg px-3 py-2 text-xs font-medium"
+                            style={{ background: '#fffbeb', border: '1px solid #fcd34d', color: '#92400e' }}
                           >
-                            {claimingId === a.id ? 'Bezig...' : alGeclaimd ? '✓ Geclaimed' : 'Claim opdracht'}
-                          </button>
+                            Verifieer je e-mail om te claimen
+                          </div>
+                        )}
+                        {user && user.emailVerified && (
+                          alGeclaimd ? (
+                            <div className="flex flex-col gap-2">
+                              <span className="text-sm font-semibold px-4 py-2.5 rounded-xl text-center"
+                                style={{ background: '#dcfce7', color: '#166534' }}>
+                                ✓ Geclaimed
+                              </span>
+                              <button
+                                onClick={() => unclaimOpdracht(a)}
+                                disabled={unclaimingId === a.id}
+                                className="text-xs font-medium px-4 py-2 rounded-xl transition-all"
+                                style={{ background: '#fee2e2', color: '#991b1b' }}
+                              >
+                                {unclaimingId === a.id ? 'Bezig...' : 'Claim intrekken'}
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => claimOpdracht(a.id)}
+                              disabled={claimingId === a.id}
+                              className="text-sm font-semibold px-4 py-2.5 rounded-xl transition-all"
+                              style={{ background: 'var(--accent)', color: '#fff' }}
+                            >
+                              {claimingId === a.id ? 'Bezig...' : 'Claim opdracht'}
+                            </button>
+                          )
                         )}
 
                         {/* View claims */}

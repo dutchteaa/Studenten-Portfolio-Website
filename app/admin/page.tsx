@@ -8,6 +8,13 @@ import { db } from '@/lib/firebase';
 
 type ProjectType = 'website' | 'game' | 'hardware' | 'overig';
 
+interface Claim {
+  uid: string;
+  naam: string;
+  email: string;
+  claimedAt: string;
+}
+
 interface Aanvraag {
   id: string;
   bedrijfsnaam: string;
@@ -18,6 +25,7 @@ interface Aanvraag {
   deadline?: string;
   tijdsduur?: string;
   status: string;
+  claims?: Claim[];
 }
 
 interface Project {
@@ -44,6 +52,7 @@ export default function AdminPage() {
   const [aanvragen, setAanvragen] = useState<Aanvraag[]>([]);
   const [projecten, setProjecten] = useState<Project[]>([]);
   const [actieveTab, setActieveTab] = useState<'aanvragen' | 'projecten'>('aanvragen');
+  const [openClaims, setOpenClaims] = useState<string | null>(null);
 
   // Project bewerken
   const [bewerkProject, setBewerkProject] = useState<Project | null>(null);
@@ -73,6 +82,12 @@ export default function AdminPage() {
 
   async function statusWijzigen(id: string, nieuweStatus: string) {
     await updateDoc(doc(db, 'aanvragen', id), { status: nieuweStatus });
+    laadAanvragen();
+  }
+
+  async function verwijderClaim(aanvraag: Aanvraag, uid: string) {
+    const newClaims = (aanvraag.claims ?? []).filter(c => c.uid !== uid);
+    await updateDoc(doc(db, 'aanvragen', aanvraag.id), { claims: newClaims });
     laadAanvragen();
   }
 
@@ -203,6 +218,15 @@ export default function AdminPage() {
                     <span className={`px-3 py-1 rounded-full text-xs font-semibold status-${a.status}`}>
                       {a.status}
                     </span>
+                    {(a.claims ?? []).length > 0 && (
+                      <button
+                        onClick={() => setOpenClaims(openClaims === a.id ? null : a.id)}
+                        className="text-xs font-medium px-3 py-1.5 rounded-lg"
+                        style={{ background: 'var(--accent-glow)', color: 'var(--accent)', border: '1px solid var(--accent)' }}
+                      >
+                        {openClaims === a.id ? 'Verberg' : `Claims (${(a.claims ?? []).length})`}
+                      </button>
+                    )}
                     {a.status === 'nieuw' && (
                       <div className="flex gap-2">
                         <button onClick={() => statusWijzigen(a.id, 'goedgekeurd')}
@@ -219,6 +243,38 @@ export default function AdminPage() {
                     )}
                   </div>
                 </div>
+
+                {/* Claims list for admin */}
+                {openClaims === a.id && (a.claims ?? []).length > 0 && (
+                  <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--border)' }}>
+                    <p className="text-xs font-semibold uppercase tracking-widest mb-3"
+                      style={{ color: 'var(--accent)', fontFamily: 'JetBrains Mono, monospace' }}>
+                      Geclaimd door
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {(a.claims ?? []).map((c, idx) => (
+                        <div key={idx} className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm"
+                          style={{ background: 'var(--bg)', border: '1px solid var(--border)' }}>
+                          <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
+                            style={{ background: 'var(--accent)' }}>
+                            {c.naam.charAt(0).toUpperCase()}
+                          </span>
+                          <div>
+                            <p className="font-medium leading-tight" style={{ color: 'var(--text-dark)' }}>{c.naam}</p>
+                            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{c.email}</p>
+                          </div>
+                          <button
+                            onClick={() => verwijderClaim(a, c.uid)}
+                            className="ml-2 text-xs font-medium px-2 py-1 rounded-lg"
+                            style={{ background: '#fee2e2', color: '#991b1b' }}
+                          >
+                            Verwijder
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
