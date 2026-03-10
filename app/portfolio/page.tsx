@@ -19,6 +19,7 @@ interface Project {
   githubLink: string;
   demoLink: string;
   afbeeldingUrl: string;
+  mediaType?: 'image' | 'video';
   studentNaam: string;
   type?: ProjectType;
   leden?: Lid[];
@@ -136,7 +137,15 @@ export default function PortfolioPage() {
               style={{ background: 'var(--bg-white)', border: '1px solid var(--border)' }}
             >
               {project.afbeeldingUrl ? (
-                <img src={project.afbeeldingUrl} alt={project.titel} className="w-full h-48 object-cover" />
+                project.mediaType === 'video' ? (
+                  <video
+                    src={project.afbeeldingUrl}
+                    controls
+                    className="w-full h-48 object-contain bg-black"
+                  />
+                ) : (
+                  <img src={project.afbeeldingUrl} alt={project.titel} className="w-full h-48 object-cover" />
+                )
               ) : (
                 <div className="w-full h-48 flex items-center justify-center text-4xl"
                   style={{ background: 'var(--accent-glow)' }}>

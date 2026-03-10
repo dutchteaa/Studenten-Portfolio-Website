@@ -63,9 +63,9 @@ export default function Navbar() {
                     Dashboard
                   </NavLink>
 
-                  {/* Aanvragen bekijken — only for students */}
-                  {role === 'student' && (
-                    <NavLink href="/aanvragen" current={pathname}>
+                  {/* Opdrachten — for students and admins */}
+                  {(role === 'student' || role === 'admin') && (
+                    <NavLink href="/opdrachten" current={pathname}>
                       Opdrachten
                     </NavLink>
                   )}
