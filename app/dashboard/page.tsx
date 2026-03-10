@@ -1,17 +1,15 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import {
   collection, addDoc, getDocs, query, where,
   deleteDoc, doc, updateDoc,
 } from 'firebase/firestore';
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
-import { db, storage } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
 
 type ProjectType = 'website' | 'game' | 'hardware' | 'overig';
-type MediaType = 'image' | 'video';
 
 interface Lid {
   uid: string;
@@ -26,7 +24,6 @@ interface Project {
   githubLink: string;
   demoLink: string;
   afbeeldingUrl: string;
-  mediaType?: MediaType;
   type: ProjectType;
   leden: Lid[];
   studentId: string;
@@ -45,8 +42,6 @@ const typeLabels: Record<ProjectType, string> = {
   overig: '📦 Overig',
 };
 
-const MAX_VIDEO_MB = 10;
-
 export default function DashboardPage() {
   const { user, naam, loading } = useAuth();
   const router = useRouter();
@@ -55,14 +50,6 @@ export default function DashboardPage() {
   const [form, setForm] = useState(leegForm);
   const [toonFormulier, setToonFormulier] = useState(false);
   const [bewerkId, setBewerkId] = useState<string | null>(null);
-
-  // File upload
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [mediaBestand, setMediaBestand] = useState<File | null>(null);
-  const [mediaPreview, setMediaPreview] = useState<string | null>(null);
-  const [mediaFileType, setMediaFileType] = useState<MediaType | null>(null);
-  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
-  const [uploadFout, setUploadFout] = useState('');
 
   // Members
   const [ledenZoek, setLedenZoek] = useState('');
@@ -93,54 +80,6 @@ export default function DashboardPage() {
     if (user) laadProjecten();
   }, [user, laadProjecten]);
 
-  function handleFileKiezen(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const isVideo = file.type.startsWith('video/');
-    const isImage = file.type === 'image/png' || file.type === 'image/jpeg' || file.type === 'image/jpg';
-
-    if (!isVideo && !isImage) {
-      setUploadFout('Alleen .png, .jpeg afbeeldingen of videobestanden zijn toegestaan.');
-      return;
-    }
-    if (isVideo && file.size > MAX_VIDEO_MB * 1024 * 1024) {
-      setUploadFout(`Video mag maximaal ${MAX_VIDEO_MB} MB zijn (huidig: ${(file.size / 1024 / 1024).toFixed(1)} MB).`);
-      return;
-    }
-
-    setUploadFout('');
-    setMediaBestand(file);
-    setMediaFileType(isVideo ? 'video' : 'image');
-    setMediaPreview(URL.createObjectURL(file));
-  }
-
-  function verwijderMedia() {
-    setMediaBestand(null);
-    setMediaPreview(null);
-    setMediaFileType(null);
-    setUploadFout('');
-    setForm(f => ({ ...f, afbeeldingUrl: '' }));
-    if (fileInputRef.current) fileInputRef.current.value = '';
-  }
-
-  async function uploadMedia(file: File): Promise<{ url: string; type: MediaType }> {
-    return new Promise((resolve, reject) => {
-      const ext = file.name.split('.').pop();
-      const storageRef = ref(storage, `projecten/${user!.uid}/${Date.now()}.${ext}`);
-      const task = uploadBytesResumable(storageRef, file);
-      task.on('state_changed',
-        snap => setUploadProgress(Math.round((snap.bytesTransferred / snap.totalBytes) * 100)),
-        err => reject(err),
-        async () => {
-          const url = await getDownloadURL(task.snapshot.ref);
-          setUploadProgress(null);
-          resolve({ url, type: file.type.startsWith('video/') ? 'video' : 'image' });
-        }
-      );
-    });
-  }
-
   function openNieuwFormulier() {
     setForm(leegForm);
     setFormulierLeden([]);
@@ -148,7 +87,6 @@ export default function DashboardPage() {
     setLedenZoekResultaat(null);
     setBewerkId(null);
     setToonFormulier(true);
-    verwijderMedia();
   }
 
   function openBewerkFormulier(p: Project) {
@@ -165,13 +103,6 @@ export default function DashboardPage() {
     setLedenZoekResultaat(null);
     setBewerkId(p.id);
     setToonFormulier(true);
-    // Show existing media preview
-    if (p.afbeeldingUrl) {
-      setMediaPreview(p.afbeeldingUrl);
-      setMediaFileType(p.mediaType ?? 'image');
-    } else {
-      verwijderMedia();
-    }
   }
 
   function sluitFormulier() {
@@ -183,7 +114,6 @@ export default function DashboardPage() {
     setLedenZoekResultaat(null);
     setOpslaanFout('');
     setOpslaanBezig(false);
-    verwijderMedia();
   }
 
   async function zoekStudent() {
@@ -239,25 +169,8 @@ export default function DashboardPage() {
       const alleLedenZonderEigenaar = formulierLeden.filter(l => l.uid !== eigenaarId);
       const alleLeden = [eigenaarLid, ...alleLedenZonderEigenaar];
 
-      let mediaUrl = form.afbeeldingUrl;
-      let mediaType: MediaType | undefined = mediaFileType ?? undefined;
-
-      if (mediaBestand) {
-        try {
-          const result = await uploadMedia(mediaBestand);
-          mediaUrl = result.url;
-          mediaType = result.type;
-        } catch {
-          setUploadFout('Upload mislukt. Controleer je Firebase Storage regels.');
-          setOpslaanBezig(false);
-          return;
-        }
-      }
-
       const data = {
         ...form,
-        afbeeldingUrl: mediaUrl,
-        mediaType: mediaType ?? null,
         leden: alleLeden,
         studentId: eigenaarId,
         studentNaam: eigenaarNaam,
@@ -354,71 +267,15 @@ export default function DashboardPage() {
               <input placeholder="Live demo link (optioneel)" value={form.demoLink}
                 onChange={e => setForm({ ...form, demoLink: e.target.value })} className="input-themed" />
 
-              {/* Media upload */}
+              {/* Afbeelding URL */}
               <div>
-                <label className="text-xs font-semibold mb-2 block" style={{ color: 'var(--text-muted)' }}>
-                  Afbeelding of video (optioneel · video max {MAX_VIDEO_MB} MB)
-                </label>
-
-                {mediaPreview ? (
-                  <div className="relative rounded-xl overflow-hidden"
-                    style={{ border: '1px solid var(--border)' }}>
-                    {mediaFileType === 'video' ? (
-                      <video src={mediaPreview} controls className="w-full max-h-56 object-contain bg-black" />
-                    ) : (
-                      <img src={mediaPreview} alt="Preview" className="w-full max-h-56 object-cover" />
-                    )}
-                    {/* Only show remove if it's a new file (not existing URL) */}
-                    {mediaBestand && (
-                      <button onClick={verwijderMedia}
-                        className="absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold"
-                        style={{ background: '#fee2e2', color: '#991b1b' }}>
-                        ×
-                      </button>
-                    )}
-                  </div>
-                ) : (
-                  <button onClick={() => fileInputRef.current?.click()}
-                    className="w-full py-8 rounded-xl flex flex-col items-center gap-2 transition-all"
-                    style={{ border: '2px dashed var(--border)', background: 'var(--bg)', color: 'var(--text-muted)' }}>
-                    <span className="text-2xl">📎</span>
-                    <span className="text-sm font-medium">Klik om bestand te kiezen</span>
-                    <span className="text-xs">.png, .jpg, .jpeg · video (max {MAX_VIDEO_MB} MB)</span>
-                  </button>
-                )}
-
-                {/* Hidden file input */}
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/png,image/jpeg,image/jpg,video/*"
-                  onChange={handleFileKiezen}
-                  className="hidden"
-                />
-
-                {/* Change button when preview is shown */}
-                {mediaPreview && (
-                  <button onClick={() => fileInputRef.current?.click()}
-                    className="mt-2 text-xs font-medium px-3 py-1.5 rounded-lg"
-                    style={{ color: 'var(--accent)', background: 'var(--accent-glow)', border: '1px solid var(--accent)' }}>
-                    Ander bestand kiezen
-                  </button>
-                )}
-
-                {uploadFout && (
-                  <p className="text-xs mt-2 px-3 py-1.5 rounded-lg" style={{ background: '#fee2e2', color: '#991b1b' }}>
-                    {uploadFout}
-                  </p>
-                )}
-
-                {uploadProgress !== null && (
-                  <div className="mt-2">
-                    <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--border)' }}>
-                      <div className="h-full rounded-full transition-all"
-                        style={{ width: `${uploadProgress}%`, background: 'var(--accent)' }} />
-                    </div>
-                    <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>Uploaden... {uploadProgress}%</p>
-                  </div>
+                <input placeholder="Afbeelding URL (optioneel)" value={form.afbeeldingUrl}
+                  onChange={e => setForm({ ...form, afbeeldingUrl: e.target.value })} className="input-themed" />
+                {form.afbeeldingUrl && (
+                  <img src={form.afbeeldingUrl} alt="Preview" className="mt-2 w-full max-h-48 object-cover rounded-xl"
+                    style={{ border: '1px solid var(--border)' }}
+                    onError={e => (e.currentTarget.style.display = 'none')}
+                    onLoad={e => (e.currentTarget.style.display = '')} />
                 )}
               </div>
 
@@ -477,12 +334,8 @@ export default function DashboardPage() {
             )}
 
             <div className="flex gap-3 mt-5">
-              <button onClick={opslaan} disabled={uploadProgress !== null || opslaan_bezig} className="btn-accent text-sm">
-                {uploadProgress !== null
-                  ? `Uploaden ${uploadProgress}%`
-                  : opslaan_bezig
-                  ? 'Bezig...'
-                  : bewerkId ? 'Opslaan' : 'Publiceren'}
+              <button onClick={opslaan} disabled={opslaan_bezig} className="btn-accent text-sm">
+                {opslaan_bezig ? 'Bezig...' : bewerkId ? 'Opslaan' : 'Publiceren'}
               </button>
               <button onClick={sluitFormulier} disabled={opslaan_bezig}
                 className="text-sm px-5 py-2 rounded-lg font-medium transition-colors"
@@ -510,13 +363,9 @@ export default function DashboardPage() {
                   className={`animate-fade-up animate-fade-up-${Math.min(i + 1, 5)} card-hover rounded-xl overflow-hidden`}
                   style={{ background: 'var(--bg-white)', border: '1px solid var(--border)' }}>
 
-                  {/* Media preview in card */}
+                  {/* Afbeelding preview in card */}
                   {p.afbeeldingUrl && (
-                    p.mediaType === 'video' ? (
-                      <video src={p.afbeeldingUrl} controls className="w-full max-h-48 object-contain bg-black" />
-                    ) : (
-                      <img src={p.afbeeldingUrl} alt={p.titel} className="w-full h-40 object-cover" />
-                    )
+                    <img src={p.afbeeldingUrl} alt={p.titel} className="w-full h-40 object-cover" />
                   )}
 
                   <div className="p-6 flex justify-between items-start gap-4">
