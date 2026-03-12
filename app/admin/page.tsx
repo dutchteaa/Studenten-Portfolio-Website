@@ -57,8 +57,8 @@ export default function AdminPage() {
       <div className="max-w-5xl mx-auto px-5 py-10">
 
         <div className="animate-fade-up mb-8">
-          <span className="section-label">Beheer</span>
-          <h1 className="text-2xl font-bold mt-1 gradient-text inline-block">Admin Dashboard</h1>
+          <span className="section-label block mb-1">Beheer</span>
+          <h1 className="text-2xl font-bold gradient-text">Admin Dashboard</h1>
         </div>
 
         {/* Stats */}

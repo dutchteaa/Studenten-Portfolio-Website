@@ -126,13 +126,13 @@ export default function OpdrachtenPage() {
                         </div>
                         {user && (alGeclaimd ? (
                           <div className="space-y-1.5">
-                            <div className="badge badge-success w-full justify-center py-2 text-xs font-semibold">Geclaimed</div>
-                            <button onClick={() => unclaimOpdracht(a)} disabled={unclaimingId === a.id} className="text-xs font-medium w-full py-1.5 rounded-lg" style={{ background: 'rgba(239,68,68,0.12)', color: '#f87171' }}>
+                            <div className="badge badge-success w-full justify-center py-2.5 text-xs font-semibold">Geclaimed</div>
+                            <button onClick={() => unclaimOpdracht(a)} disabled={unclaimingId === a.id} className="text-xs font-medium w-full py-2.5 rounded-lg text-center" style={{ background: 'rgba(239,68,68,0.12)', color: '#f87171' }}>
                               {unclaimingId === a.id ? 'Bezig...' : 'Claim intrekken'}
                             </button>
                           </div>
                         ) : (
-                          <button onClick={() => claimOpdracht(a.id)} disabled={claimingId === a.id} className="btn-primary w-full text-sm py-2">
+                          <button onClick={() => claimOpdracht(a.id)} disabled={claimingId === a.id} className="btn-primary w-full text-sm py-2.5">
                             {claimingId === a.id ? 'Bezig...' : 'Claim opdracht'}
                           </button>
                         ))}

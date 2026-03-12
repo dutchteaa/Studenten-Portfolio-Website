@@ -87,7 +87,6 @@ export default function HomePage() {
               {[
                 { value: stats.studenten > 0 ? stats.studenten : '\u2014', label: 'Studenten' },
                 { value: stats.projecten > 0 ? stats.projecten : '\u2014', label: 'Projecten' },
-                { value: 'Nova', label: 'College' },
               ].map((stat, i) => (
                 <div key={i}>
                   <p className="text-2xl font-bold gradient-text">{stat.value}</p>

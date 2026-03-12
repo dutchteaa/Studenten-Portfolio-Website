@@ -32,13 +32,6 @@ export default function Footer() {
                 ))}
               </div>
             </div>
-            <div>
-              <p className="text-[0.6875rem] font-semibold uppercase tracking-widest mb-3" style={{ color: 'var(--text-muted)' }}>Account</p>
-              <div className="space-y-2.5">
-                <Link href="/login" className="block text-sm transition-colors" style={{ color: 'var(--text-secondary)' }}>Inloggen</Link>
-                <Link href="/register" className="block text-sm transition-colors" style={{ color: 'var(--text-secondary)' }}>Registreren</Link>
-              </div>
-            </div>
           </div>
         </div>
 
