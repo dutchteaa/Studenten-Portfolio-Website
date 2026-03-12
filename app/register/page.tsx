@@ -80,7 +80,7 @@ export default function RegisterPage() {
             <input type="email" placeholder="E-mailadres (@novacollege.nl)" value={email} onChange={e => setEmail(e.target.value)}
               className="input-themed" />
             <p className="text-xs mt-1 px-1" style={{ color: 'var(--text-muted)' }}>
-              Alleen Nova College e-mailadressen zijn toegestaan
+              Alleen Nova College e-mailadressen zijn toegestaan.
             </p>
           </div>
           <input type="password" placeholder="Wachtwoord (min. 6 tekens)" value={password} onChange={e => setPassword(e.target.value)}
