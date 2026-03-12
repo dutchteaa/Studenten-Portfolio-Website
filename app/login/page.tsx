@@ -28,12 +28,15 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-5 bg-dots" style={{ background: 'var(--bg)' }}>
-      <div className="animate-scale-in w-full max-w-sm">
-        <div className="card p-7" style={{ boxShadow: 'var(--shadow-lg)' }}>
+    <div className="min-h-screen flex items-center justify-center px-5 relative">
+      {/* Background glow */}
+      <div className="hero-glow" style={{ width: '500px', height: '500px', background: 'rgba(99,102,241,0.08)', top: '10%', left: '30%' }} />
+
+      <div className="animate-scale-in w-full max-w-sm relative">
+        <div className="card p-7" style={{ boxShadow: 'var(--glow)' }}>
           <div className="text-center mb-7">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center mx-auto mb-4" style={{ background: 'var(--accent)' }}>
-              <span className="text-white text-sm font-bold" style={{ fontFamily: 'JetBrains Mono, monospace' }}>SP</span>
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4" style={{ background: 'var(--gradient)' }}>
+              <span className="text-white text-sm font-bold" style={{ fontFamily: 'var(--font-mono)' }}>SP</span>
             </div>
             <h1 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Welkom terug</h1>
             <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>Log in op je account</p>
@@ -42,21 +45,17 @@ export default function LoginPage() {
           <div className="space-y-3">
             <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>E-mailadres</label>
-              <input type="email" placeholder="naam@novacollege.nl" value={email} onChange={e => setEmail(e.target.value)}
-                className="input-themed" />
+              <input type="email" placeholder="naam@novacollege.nl" value={email} onChange={e => setEmail(e.target.value)} className="input-themed" />
             </div>
             <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>Wachtwoord</label>
               <input type="password" placeholder="Wachtwoord" value={password} onChange={e => setPassword(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleLogin()}
-                className="input-themed" />
+                onKeyDown={e => e.key === 'Enter' && handleLogin()} className="input-themed" />
             </div>
           </div>
 
           {error && (
-            <div className="mt-3 px-3 py-2 rounded-lg text-sm" style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca' }}>
-              {error}
-            </div>
+            <div className="badge badge-danger mt-3 w-full justify-center py-2 text-sm">{error}</div>
           )}
 
           <button onClick={handleLogin} disabled={loading} className="btn-primary w-full mt-5 py-2.5">
@@ -65,9 +64,7 @@ export default function LoginPage() {
 
           <p className="text-center mt-5 text-sm" style={{ color: 'var(--text-muted)' }}>
             Nog geen account?{' '}
-            <a href="/register" className="font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
-              Registreren
-            </a>
+            <a href="/register" className="font-semibold hover:underline" style={{ color: 'var(--accent-3)' }}>Registreren</a>
           </p>
         </div>
       </div>
