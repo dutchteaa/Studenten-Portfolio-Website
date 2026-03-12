@@ -9,6 +9,7 @@ export default function RegisterPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   async function handleRegister() {
     setError('');
@@ -16,6 +17,7 @@ export default function RegisterPage() {
       setError('Alleen @novacollege.nl e-mailadressen zijn toegestaan.');
       return;
     }
+    setLoading(true);
     try {
       await register(email, password, name);
       setSuccess(true);
@@ -25,85 +27,87 @@ export default function RegisterPage() {
       } else {
         setError('Er ging iets mis bij het registreren.');
       }
+      setLoading(false);
     }
   }
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4 bg-grid" style={{ background: 'var(--bg)' }}>
-        <div
-          className="animate-scale-in w-full max-w-md rounded-2xl p-8 shadow-lg text-center"
-          style={{ background: 'var(--bg-white)', border: '1px solid var(--border)' }}
-        >
-          <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-5 text-3xl"
-            style={{ background: 'var(--accent-glow)' }}>
-            ✉️
+      <div className="min-h-screen flex items-center justify-center px-5 bg-dots" style={{ background: 'var(--bg)' }}>
+        <div className="animate-scale-in w-full max-w-sm">
+          <div className="card p-7 text-center" style={{ boxShadow: 'var(--shadow-lg)' }}>
+            <div
+              className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-5"
+              style={{ background: '#f0fdf4', border: '1px solid #bbf7d0' }}
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#15803d" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            </div>
+            <h1 className="text-xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>Account aangemaakt</h1>
+            <p className="text-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+              Je account is aangemaakt. Log in om aan de slag te gaan.
+            </p>
+            <a href="/login" className="btn-primary w-full mt-5 py-2.5">
+              Naar inloggen
+            </a>
           </div>
-          <h1 className="text-2xl font-bold mb-2" style={{ color: 'var(--text-dark)' }}>Verifieer je e-mail</h1>
-          <p className="text-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>
-            We hebben een verificatie-e-mail gestuurd naar <strong>{email}</strong>.
-            Klik op de link in de e-mail om je account te activeren, en log daarna in.
-          </p>
-          <a
-            href="/login"
-            className="btn-accent block w-full mt-6 text-center"
-            style={{ padding: '0.75rem' }}
-          >
-            Naar inloggen
-          </a>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 bg-grid" style={{ background: 'var(--bg)' }}>
-      <div
-        className="animate-scale-in w-full max-w-md rounded-2xl p-8 shadow-lg"
-        style={{ background: 'var(--bg-white)', border: '1px solid var(--border)' }}
-      >
-        <div className="text-center mb-8">
-          <div className="badge-accent justify-center mb-4">
-            <span className="w-1.5 h-1.5 rounded-full animate-pulse-dot" style={{ background: 'var(--accent)' }} />
-            <span style={{ fontFamily: 'JetBrains Mono, monospace' }}>SP.dev</span>
+    <div className="min-h-screen flex items-center justify-center px-5 bg-dots" style={{ background: 'var(--bg)' }}>
+      <div className="animate-scale-in w-full max-w-sm">
+        <div className="card p-7" style={{ boxShadow: 'var(--shadow-lg)' }}>
+          <div className="text-center mb-7">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center mx-auto mb-4" style={{ background: 'var(--accent)' }}>
+              <span className="text-white text-sm font-bold" style={{ fontFamily: 'JetBrains Mono, monospace' }}>SP</span>
+            </div>
+            <h1 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Account aanmaken</h1>
+            <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>Registreer om projecten toe te voegen</p>
           </div>
-          <h1 className="text-2xl font-bold" style={{ color: 'var(--text-dark)' }}>Account aanmaken</h1>
-          <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
-            Registreer als student om projecten toe te voegen
+
+          <div className="space-y-3">
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>Volledige naam</label>
+              <input type="text" placeholder="Jan de Vries" value={name} onChange={e => setName(e.target.value)}
+                className="input-themed" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>E-mailadres</label>
+              <input type="email" placeholder="naam@novacollege.nl" value={email} onChange={e => setEmail(e.target.value)}
+                className="input-themed" />
+              <p className="text-[0.6875rem] mt-1" style={{ color: 'var(--text-muted)' }}>
+                Alleen @novacollege.nl adressen
+              </p>
+            </div>
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>Wachtwoord</label>
+              <input type="password" placeholder="Min. 6 tekens" value={password} onChange={e => setPassword(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleRegister()}
+                className="input-themed" />
+            </div>
+          </div>
+
+          {error && (
+            <div className="mt-3 px-3 py-2 rounded-lg text-sm" style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca' }}>
+              {error}
+            </div>
+          )}
+
+          <button onClick={handleRegister} disabled={loading} className="btn-primary w-full mt-5 py-2.5">
+            {loading ? 'Bezig...' : 'Registreren'}
+          </button>
+
+          <p className="text-center mt-5 text-sm" style={{ color: 'var(--text-muted)' }}>
+            Al een account?{' '}
+            <a href="/login" className="font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
+              Inloggen
+            </a>
           </p>
         </div>
-
-        <div className="space-y-4">
-          <input type="text" placeholder="Volledige naam" value={name} onChange={e => setName(e.target.value)}
-            className="input-themed" />
-          <div>
-            <input type="email" placeholder="E-mailadres (@novacollege.nl)" value={email} onChange={e => setEmail(e.target.value)}
-              className="input-themed" />
-            <p className="text-xs mt-1 px-1" style={{ color: 'var(--text-muted)' }}>
-              Alleen Nova College e-mailadressen zijn toegestaan
-            </p>
-          </div>
-          <input type="password" placeholder="Wachtwoord (min. 6 tekens)" value={password} onChange={e => setPassword(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && handleRegister()}
-            className="input-themed" />
-        </div>
-
-        {error && (
-          <p className="text-sm mt-3 px-3 py-2 rounded-lg" style={{ background: '#fee2e2', color: '#991b1b' }}>
-            {error}
-          </p>
-        )}
-
-        <button onClick={handleRegister} className="btn-accent w-full mt-6 text-center" style={{ padding: '0.75rem' }}>
-          Registreren
-        </button>
-
-        <p className="text-center mt-5 text-sm" style={{ color: 'var(--text-muted)' }}>
-          Al een account?{' '}
-          <a href="/login" className="font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
-            Inloggen
-          </a>
-        </p>
       </div>
     </div>
   );

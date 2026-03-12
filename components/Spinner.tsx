@@ -1,7 +1,11 @@
 export default function Spinner() {
   return (
-    <div className="flex justify-center py-20">
-      <div className="w-8 h-8 border-2 border-[#117e7d] border-t-transparent rounded-full animate-spin" />
+    <div className="flex flex-col items-center justify-center py-20 gap-3">
+      <div
+        className="w-8 h-8 rounded-full border-[2.5px] animate-spin"
+        style={{ borderColor: 'var(--border)', borderTopColor: 'var(--accent)' }}
+      />
+      <span className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>Laden...</span>
     </div>
   );
 }
