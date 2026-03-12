@@ -12,6 +12,10 @@ export default function RegisterPage() {
 
   async function handleRegister() {
     setError('');
+    if (!name.trim()) {
+      setError('Vul je volledige naam in.');
+      return;
+    }
     if (!email.toLowerCase().endsWith('@novacollege.nl')) {
       setError('Alleen @novacollege.nl e-mailadressen zijn toegestaan.');
       return;
@@ -44,7 +48,7 @@ export default function RegisterPage() {
             We hebben een verificatie-e-mail gestuurd naar <strong>{email}</strong>.
             Klik op de link in de e-mail om je account te activeren, en log daarna in.
           </p>
-          <a
+          
             href="/login"
             className="btn-accent block w-full mt-6 text-center"
             style={{ padding: '0.75rem' }}
@@ -74,18 +78,38 @@ export default function RegisterPage() {
         </div>
 
         <div className="space-y-4">
-          <input type="text" placeholder="Volledige naam" value={name} onChange={e => setName(e.target.value)}
-            className="input-themed" />
           <div>
-            <input type="email" placeholder="E-mailadres (@novacollege.nl)" value={email} onChange={e => setEmail(e.target.value)}
-              className="input-themed" />
+            <input
+              type="text"
+              placeholder="Volledige naam"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              className="input-themed"
+            />
             <p className="text-xs mt-1 px-1" style={{ color: 'var(--text-muted)' }}>
-              Alleen Nova College e-mailadressen zijn toegestaan.
+              Vul je voor- en achternaam in zoals op je schoolpas.
             </p>
           </div>
-          <input type="password" placeholder="Wachtwoord (min. 6 tekens)" value={password} onChange={e => setPassword(e.target.value)}
+          <div>
+            <input
+              type="email"
+              placeholder="naam@novacollege.nl"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              className="input-themed"
+            />
+            <p className="text-xs mt-1 px-1" style={{ color: 'var(--text-muted)' }}>
+              ⚠️ Alleen <strong>@novacollege.nl</strong> e-mailadressen zijn toegestaan.
+            </p>
+          </div>
+          <input
+            type="password"
+            placeholder="Wachtwoord (min. 6 tekens)"
+            value={password}
+            onChange={e => setPassword(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleRegister()}
-            className="input-themed" />
+            className="input-themed"
+          />
         </div>
 
         {error && (

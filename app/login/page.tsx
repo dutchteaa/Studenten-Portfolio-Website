@@ -64,13 +64,11 @@ export default function LoginPage() {
         className="animate-scale-in w-full max-w-md rounded-2xl p-8 shadow-lg"
         style={{ background: 'var(--bg-white)', border: '1px solid var(--border)' }}
       >
-        {/* Header */}
         <div className="text-center mb-8">
           <div className="badge-accent justify-center mb-4">
             <span className="w-1.5 h-1.5 rounded-full animate-pulse-dot" style={{ background: 'var(--accent)' }} />
             <span style={{ fontFamily: 'JetBrains Mono, monospace' }}>SP.dev</span>
           </div>
-
           {view === 'login' ? (
             <>
               <h1 className="text-2xl font-bold" style={{ color: 'var(--text-dark)' }}>Inloggen</h1>
@@ -79,14 +77,11 @@ export default function LoginPage() {
           ) : (
             <>
               <h1 className="text-2xl font-bold" style={{ color: 'var(--text-dark)' }}>Wachtwoord vergeten</h1>
-              <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
-                We sturen je een herstelmail
-              </p>
+              <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>We sturen je een herstelmail</p>
             </>
           )}
         </div>
 
-        {/* Login view */}
         {view === 'login' && (
           <>
             <div className="space-y-4">
@@ -142,7 +137,6 @@ export default function LoginPage() {
           </>
         )}
 
-        {/* Forgot password view */}
         {view === 'forgot' && (
           <>
             {resetSent ? (
