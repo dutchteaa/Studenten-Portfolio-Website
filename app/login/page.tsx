@@ -51,6 +51,13 @@ export default function LoginPage() {
     }
   }
 
+  function switchView(next: View) {
+    setView(next);
+    setError('');
+    setResetSent(false);
+    setPassword('');
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center px-5 relative">
       {/* Background glow */}
