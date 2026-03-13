@@ -11,10 +11,15 @@ type ProjectType = 'website' | 'game' | 'hardware' | 'overig';
 interface Lid { uid: string; naam: string; email: string; }
 interface Project {
   id: string; titel: string; beschrijving: string; githubLink: string; demoLink: string;
-  afbeeldingUrl: string; youtubeUrl?: string; type: ProjectType; leden: Lid[]; studentId: string; studentNaam: string;
+  afbeeldingUrl: string; youtubeUrl?: string; type?: ProjectType; types?: ProjectType[]; leden: Lid[]; studentId: string; studentNaam: string;
 }
 
-const leegForm = { titel: '', beschrijving: '', githubLink: '', demoLink: '', afbeeldingUrl: '', youtubeUrl: '', type: 'website' as ProjectType };
+function getTypes(p: Project): ProjectType[] {
+  if (p.types && p.types.length > 0) return p.types;
+  return p.type ? [p.type] : ['overig'];
+}
+
+const leegForm = { titel: '', beschrijving: '', githubLink: '', demoLink: '', afbeeldingUrl: '', youtubeUrl: '', types: ['website'] as ProjectType[] };
 const typeLabels: Record<ProjectType, string> = { website: 'Website', game: 'Game', hardware: 'Hardware', overig: 'Overig' };
 
 export default function DashboardPage() {
@@ -25,7 +30,7 @@ export default function DashboardPage() {
   const [toonFormulier, setToonFormulier] = useState(false);
   const [bewerkId, setBewerkId] = useState<string | null>(null);
   const [ledenZoek, setLedenZoek] = useState('');
-  const [ledenZoekResultaat, setLedenZoekResultaat] = useState<Lid | null | 'niet-gevonden'>(null);
+  const [ledenZoekResultaat, setLedenZoekResultaat] = useState<Lid[] | null | 'niet-gevonden'>(null);
   const [ledenZoekLoading, setLedenZoekLoading] = useState(false);
   const [formulierLeden, setFormulierLeden] = useState<Lid[]>([]);
   const [opslaan_bezig, setOpslaanBezig] = useState(false);
@@ -44,7 +49,7 @@ export default function DashboardPage() {
 
   function openNieuwFormulier() { setForm(leegForm); setFormulierLeden([]); setLedenZoek(''); setLedenZoekResultaat(null); setBewerkId(null); setToonFormulier(true); }
   function openBewerkFormulier(p: Project) {
-    setForm({ titel: p.titel, beschrijving: p.beschrijving, githubLink: p.githubLink ?? '', demoLink: p.demoLink ?? '', afbeeldingUrl: p.afbeeldingUrl ?? '', youtubeUrl: p.youtubeUrl ?? '', type: p.type ?? 'website' });
+    setForm({ titel: p.titel, beschrijving: p.beschrijving, githubLink: p.githubLink ?? '', demoLink: p.demoLink ?? '', afbeeldingUrl: p.afbeeldingUrl ?? '', youtubeUrl: p.youtubeUrl ?? '', types: getTypes(p) });
     setFormulierLeden((p.leden ?? []).filter(l => l.uid !== p.studentId)); setLedenZoek(''); setLedenZoekResultaat(null); setBewerkId(p.id); setToonFormulier(true);
   }
   function sluitFormulier() { setToonFormulier(false); setBewerkId(null); setForm(leegForm); setFormulierLeden([]); setLedenZoek(''); setLedenZoekResultaat(null); setOpslaanFout(''); setOpslaanBezig(false); }
@@ -52,11 +57,13 @@ export default function DashboardPage() {
   async function zoekStudent() {
     if (!ledenZoek.trim()) return;
     setLedenZoekLoading(true); setLedenZoekResultaat(null);
-    const q = query(collection(db, 'users'), where('email', '==', ledenZoek.trim().toLowerCase()));
-    const snap = await getDocs(q);
-    if (snap.empty) { setLedenZoekResultaat('niet-gevonden'); } else {
-      const data = snap.docs[0].data() as { uid: string; name: string; email: string };
-      setLedenZoekResultaat({ uid: data.uid, naam: data.name, email: data.email });
+    const snap = await getDocs(collection(db, 'users'));
+    const zoekterm = ledenZoek.trim().toLowerCase();
+    const resultaten = snap.docs
+      .map(d => d.data() as { uid: string; name: string; email: string })
+      .filter(d => d.name?.toLowerCase().includes(zoekterm) && d.uid !== user?.uid && !formulierLeden.some(l => l.uid === d.uid));
+    if (resultaten.length === 0) { setLedenZoekResultaat('niet-gevonden'); } else {
+      setLedenZoekResultaat(resultaten.map(d => ({ uid: d.uid, naam: d.name, email: d.email })));
     }
     setLedenZoekLoading(false);
   }
@@ -124,14 +131,20 @@ export default function DashboardPage() {
                 <textarea placeholder="Beschrijf je project..." value={form.beschrijving} onChange={e => setForm({ ...form, beschrijving: e.target.value })} rows={4} className="input-themed" />
               </div>
               <div>
-                <label className="block text-xs font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>Type</label>
+                <label className="block text-xs font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>Type <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(meerdere mogelijk)</span></label>
                 <div className="flex gap-2 flex-wrap">
-                  {(Object.keys(typeLabels) as ProjectType[]).map(t => (
-                    <button key={t} onClick={() => setForm({ ...form, type: t })} className="text-sm px-3.5 py-1.5 rounded-lg font-medium transition-all"
-                      style={form.type === t ? { background: 'var(--gradient)', color: '#fff' } : { background: 'var(--bg-card)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
-                      {typeLabels[t]}
-                    </button>
-                  ))}
+                  {(Object.keys(typeLabels) as ProjectType[]).map(t => {
+                    const selected = form.types.includes(t);
+                    return (
+                      <button key={t} onClick={() => {
+                        const next = selected ? form.types.filter(x => x !== t) : [...form.types, t];
+                        setForm({ ...form, types: next.length > 0 ? next : [t] });
+                      }} className="text-sm px-3.5 py-1.5 rounded-lg font-medium transition-all"
+                        style={selected ? { background: 'var(--gradient)', color: '#fff' } : { background: 'var(--bg-card)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
+                        {typeLabels[t]}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -151,14 +164,18 @@ export default function DashboardPage() {
               <div className="pt-2">
                 <label className="block text-xs font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>Teamleden toevoegen</label>
                 <div className="flex gap-2">
-                  <input placeholder="E-mailadres zoeken..." value={ledenZoek} onChange={e => { setLedenZoek(e.target.value); setLedenZoekResultaat(null); }} onKeyDown={e => e.key === 'Enter' && zoekStudent()} className="input-themed flex-1" />
+                  <input placeholder="Zoek op naam..." value={ledenZoek} onChange={e => { setLedenZoek(e.target.value); setLedenZoekResultaat(null); }} onKeyDown={e => e.key === 'Enter' && zoekStudent()} className="input-themed flex-1" />
                   <button onClick={zoekStudent} disabled={ledenZoekLoading} className="btn-secondary text-sm shrink-0">Zoeken</button>
                 </div>
                 {ledenZoekResultaat === 'niet-gevonden' && <p className="text-xs mt-2" style={{ color: '#f87171' }}>Student niet gevonden.</p>}
                 {ledenZoekResultaat && ledenZoekResultaat !== 'niet-gevonden' && (
-                  <div className="flex items-center justify-between mt-2 px-3 py-2.5 rounded-lg" style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.25)' }}>
-                    <span className="text-sm" style={{ color: 'var(--text-primary)' }}>{ledenZoekResultaat.naam} <span style={{ color: 'var(--text-muted)' }}>({ledenZoekResultaat.email})</span></span>
-                    <button onClick={() => voegLidToe(ledenZoekResultaat as Lid)} className="btn-primary text-xs py-1 px-3">Toevoegen</button>
+                  <div className="mt-2 space-y-1.5">
+                    {ledenZoekResultaat.map(r => (
+                      <div key={r.uid} className="flex items-center justify-between px-3 py-2.5 rounded-lg" style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.25)' }}>
+                        <span className="text-sm" style={{ color: 'var(--text-primary)' }}>{r.naam} <span style={{ color: 'var(--text-muted)' }}>({r.email})</span></span>
+                        <button onClick={() => voegLidToe(r)} className="btn-primary text-xs py-1 px-3">Toevoegen</button>
+                      </div>
+                    ))}
                   </div>
                 )}
                 {formulierLeden.length > 0 && (
@@ -197,7 +214,7 @@ export default function DashboardPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap mb-1">
                         <h3 className="text-[0.9375rem] font-semibold" style={{ color: 'var(--text-primary)' }}>{p.titel}</h3>
-                        {p.type && <span className="badge badge-accent text-[0.625rem]">{typeLabels[p.type]}</span>}
+                        {getTypes(p).map(t => <span key={t} className="badge badge-accent text-[0.625rem]">{typeLabels[t]}</span>)}
                         {!isEigenaar && <span className="badge badge-success text-[0.625rem]">Lid</span>}
                       </div>
                       <p className="text-sm mt-1 line-clamp-2" style={{ color: 'var(--text-muted)' }}>{p.beschrijving}</p>

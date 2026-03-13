@@ -21,7 +21,13 @@ interface Project {
   youtubeUrl?: string;
   studentNaam: string;
   type?: ProjectType;
+  types?: ProjectType[];
   leden?: Lid[];
+}
+
+function getTypes(p: Project): ProjectType[] {
+  if (p.types && p.types.length > 0) return p.types;
+  return p.type ? [p.type] : ['overig'];
 }
 
 function getYoutubeEmbedUrl(url: string): string | null {
@@ -86,7 +92,7 @@ function ProjectModal({ project, onClose }: { project: Project; onClose: () => v
           )
         ) : (
           <div className="w-full h-40 flex items-center justify-center text-5xl rounded-t-2xl" style={{ background: 'var(--gradient-subtle)' }}>
-            {typeIcons[project.type ?? 'overig']}
+            {typeIcons[getTypes(project)[0]]}
           </div>
         )}
 
@@ -105,7 +111,7 @@ function ProjectModal({ project, onClose }: { project: Project; onClose: () => v
         <div className="p-6">
           <div className="flex items-start gap-3 mb-1">
             <h2 className="text-xl font-bold flex-1" style={{ color: 'var(--text-primary)' }}>{project.titel}</h2>
-            {project.type && <span className="badge badge-accent shrink-0">{typeLabels[project.type]}</span>}
+            {getTypes(project).map(t => <span key={t} className="badge badge-accent shrink-0">{typeLabels[t]}</span>)}
           </div>
           <p className="text-sm font-medium mb-4" style={{ color: 'var(--accent-3)' }}>{leden}</p>
 
@@ -195,7 +201,7 @@ export default function PortfolioPage() {
   useEffect(() => { setPagina(1); }, [actieveFilter, zoekterm]);
 
   const gefilterd = projecten.filter(p => {
-    if (actieveFilter !== 'alles' && (p.type ?? 'overig') !== actieveFilter) return false;
+    if (actieveFilter !== 'alles' && !getTypes(p).includes(actieveFilter as ProjectType)) return false;
     if (!zoekterm.trim()) return true;
     const term = zoekterm.toLowerCase();
     return p.titel.toLowerCase().includes(term)
@@ -260,7 +266,7 @@ export default function PortfolioPage() {
                     : { background: 'var(--bg-card)', color: 'var(--text-muted)', border: '1px solid var(--border)' }
                   }>
                   {opt.label}
-                  {opt.value !== 'alles' && <span className="ml-1 opacity-60">{projecten.filter(p => (p.type ?? 'overig') === opt.value).length}</span>}
+                  {opt.value !== 'alles' && <span className="ml-1 opacity-60">{projecten.filter(p => getTypes(p).includes(opt.value as ProjectType)).length}</span>}
                 </button>
               ))}
             </div>
@@ -299,13 +305,13 @@ export default function PortfolioPage() {
                       )
                     ) : (
                       <div className="w-full h-48 flex items-center justify-center text-3xl" style={{ background: 'var(--gradient-subtle)' }}>
-                        {typeIcons[project.type ?? 'overig']}
+                        {typeIcons[getTypes(project)[0]]}
                       </div>
                     )}
                     <div className="p-5">
                       <div className="flex items-start gap-2 mb-1">
                         <h2 className="text-[0.9375rem] font-semibold flex-1" style={{ color: 'var(--text-primary)' }}>{project.titel}</h2>
-                        {project.type && <span className="badge badge-accent text-[0.625rem] shrink-0">{typeLabels[project.type]}</span>}
+                        {getTypes(project).map(t => <span key={t} className="badge badge-accent text-[0.625rem] shrink-0">{typeLabels[t]}</span>)}
                       </div>
                       <p className="text-xs font-medium" style={{ color: 'var(--accent-3)' }}>
                         {(project.leden && project.leden.length > 0) ? project.leden.map(l => l.naam).join(', ') : project.studentNaam}
