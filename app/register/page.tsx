@@ -44,8 +44,8 @@ setLoading(true);
             <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-5" style={{ background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.25)' }}>
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4ade80" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12" /></svg>
             </div>
-            <h1 className="text-xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>Account aangemaakt</h1>
-            <p className="text-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>Je account is aangemaakt. Log in om aan de slag te gaan.</p>
+            <h1 className="text-xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>Aanvraag verstuurd</h1>
+            <p className="text-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>Je account is aangemaakt en wacht op goedkeuring van een beheerder. Je ontvangt een melding zodra je account is geactiveerd.</p>
             <a href="/login" className="btn-primary w-full mt-5 py-2.5">Naar inloggen</a>
           </div>
         </div>

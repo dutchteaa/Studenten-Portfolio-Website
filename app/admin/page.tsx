@@ -3,13 +3,14 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { collection, getDocs, updateDoc, deleteDoc, doc } from 'firebase/firestore';
+import { collection, getDocs, updateDoc, deleteDoc, doc, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
 type ProjectType = 'website' | 'game' | 'hardware' | 'overig';
 interface Claim { uid: string; naam: string; email: string; claimedAt: string; }
 interface Aanvraag { id: string; bedrijfsnaam: string; contactpersoon: string; email: string; projectomschrijving: string; technologieen?: string; deadline?: string; tijdsduur?: string; status: string; claims?: Claim[]; }
 interface Project { id: string; titel: string; beschrijving: string; studentNaam: string; githubLink?: string; demoLink?: string; type?: ProjectType; }
+interface UserAccount { id: string; uid: string; email: string; name: string; role: string; approved: boolean; createdAt: string; }
 
 const typeLabels: Record<string, string> = { website: 'Website', game: 'Game', hardware: 'Hardware', overig: 'Overig' };
 
@@ -18,17 +19,23 @@ export default function AdminPage() {
   const router = useRouter();
   const [aanvragen, setAanvragen] = useState<Aanvraag[]>([]);
   const [projecten, setProjecten] = useState<Project[]>([]);
-  const [actieveTab, setActieveTab] = useState<'aanvragen' | 'projecten'>('aanvragen');
+  const [gebruikers, setGebruikers] = useState<UserAccount[]>([]);
+  const [actieveTab, setActieveTab] = useState<'aanvragen' | 'projecten' | 'gebruikers'>('aanvragen');
   const [openClaims, setOpenClaims] = useState<string | null>(null);
   const [bewerkProject, setBewerkProject] = useState<Project | null>(null);
   const [bewerkForm, setBewerkForm] = useState({ titel: '', beschrijving: '', githubLink: '', demoLink: '', type: 'website' as ProjectType });
   const [opslaanFout, setOpslaanFout] = useState('');
 
   useEffect(() => { if (!loading && role !== 'admin') router.push('/login'); }, [role, loading, router]);
-  useEffect(() => { if (role === 'admin') { laadAanvragen(); laadProjecten(); } }, [role]);
+  useEffect(() => { if (role === 'admin') { laadAanvragen(); laadProjecten(); laadGebruikers(); } }, [role]);
 
   async function laadAanvragen() { const s = await getDocs(collection(db, 'aanvragen')); setAanvragen(s.docs.map(d => ({ id: d.id, ...d.data() } as Aanvraag))); }
   async function laadProjecten() { const s = await getDocs(collection(db, 'projecten')); setProjecten(s.docs.map(d => ({ id: d.id, ...d.data() } as Project))); }
+  async function laadGebruikers() {
+    const q = query(collection(db, 'users'), where('role', '==', 'student'));
+    const s = await getDocs(q);
+    setGebruikers(s.docs.map(d => ({ id: d.id, ...d.data() } as UserAccount)));
+  }
   async function statusWijzigen(id: string, s: string) { await updateDoc(doc(db, 'aanvragen', id), { status: s }); laadAanvragen(); }
   async function verwijderClaim(a: Aanvraag, uid: string) { await updateDoc(doc(db, 'aanvragen', a.id), { claims: (a.claims ?? []).filter(c => c.uid !== uid) }); laadAanvragen(); }
   async function aanvraagVerwijderen(id: string) { await deleteDoc(doc(db, 'aanvragen', id)); laadAanvragen(); }
@@ -40,6 +47,18 @@ export default function AdminPage() {
     try { await updateDoc(doc(db, 'projecten', bewerkProject.id), bewerkForm); setBewerkProject(null); laadProjecten(); }
     catch (err: unknown) { setOpslaanFout(err instanceof Error ? err.message : 'Opslaan mislukt.'); }
   }
+
+  async function keurGebruikerGoed(id: string) {
+    await updateDoc(doc(db, 'users', id), { approved: true });
+    laadGebruikers();
+  }
+  async function wijsGebruikerAf(id: string) {
+    await deleteDoc(doc(db, 'users', id));
+    laadGebruikers();
+  }
+
+  const wachtendGebruikers = gebruikers.filter(g => g.approved === false);
+  const goedgekeurdeGebruikers = gebruikers.filter(g => g.approved !== false);
 
   if (loading) {
     return (
@@ -62,7 +81,7 @@ export default function AdminPage() {
         </div>
 
         {/* Stats */}
-        <div className="animate-fade-up animate-fade-up-2 grid grid-cols-2 gap-4 mb-7">
+        <div className="animate-fade-up animate-fade-up-2 grid grid-cols-3 gap-4 mb-7">
           <div className="card p-5 text-center card-glow">
             <p className="text-3xl font-bold gradient-text">{aanvragen.length}</p>
             <p className="text-xs mt-1 font-medium" style={{ color: 'var(--text-muted)' }}>Aanvragen</p>
@@ -71,14 +90,22 @@ export default function AdminPage() {
             <p className="text-3xl font-bold gradient-text">{projecten.length}</p>
             <p className="text-xs mt-1 font-medium" style={{ color: 'var(--text-muted)' }}>Projecten</p>
           </div>
+          <div className="card p-5 text-center card-glow">
+            <p className="text-3xl font-bold" style={{ color: wachtendGebruikers.length > 0 ? '#f59e0b' : 'var(--text-muted)' }}>{wachtendGebruikers.length}</p>
+            <p className="text-xs mt-1 font-medium" style={{ color: 'var(--text-muted)' }}>Wachtend</p>
+          </div>
         </div>
 
         {/* Tabs */}
         <div className="animate-fade-up animate-fade-up-3 flex gap-1.5 mb-6">
-          {(['aanvragen', 'projecten'] as const).map(tab => (
-            <button key={tab} onClick={() => setActieveTab(tab)} className="px-3.5 py-1.5 rounded-lg text-sm font-medium transition-all"
-              style={actieveTab === tab ? { background: 'var(--gradient)', color: '#fff' } : { background: 'var(--bg-card)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
-              {tab === 'aanvragen' ? `Bedrijfsaanvragen (${aanvragen.length})` : `Studentprojecten (${projecten.length})`}
+          {([
+            { key: 'aanvragen' as const, label: `Bedrijfsaanvragen (${aanvragen.length})` },
+            { key: 'projecten' as const, label: `Studentprojecten (${projecten.length})` },
+            { key: 'gebruikers' as const, label: `Gebruikers${wachtendGebruikers.length > 0 ? ` (${wachtendGebruikers.length} nieuw)` : ''}` },
+          ]).map(tab => (
+            <button key={tab.key} onClick={() => setActieveTab(tab.key)} className="px-3.5 py-1.5 rounded-lg text-sm font-medium transition-all"
+              style={actieveTab === tab.key ? { background: 'var(--gradient)', color: '#fff' } : { background: 'var(--bg-card)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
+              {tab.label}
             </button>
           ))}
         </div>
@@ -86,7 +113,14 @@ export default function AdminPage() {
         {/* Aanvragen */}
         {actieveTab === 'aanvragen' && (
           <div className="space-y-3">
-            {aanvragen.map((a, i) => (
+            {aanvragen.length === 0 ? (
+              <div className="animate-fade-up card p-14 text-center">
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3" style={{ background: 'var(--gradient-subtle)' }}>
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ color: 'var(--accent-3)' }}><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M9 12h6M12 9v6" /></svg>
+                </div>
+                <p className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>Er zijn nog geen bedrijfsaanvragen.</p>
+              </div>
+            ) : aanvragen.map((a, i) => (
               <div key={a.id} className={`animate-fade-up animate-fade-up-${Math.min(i + 1, 5)} card overflow-hidden`}>
                 <div className="p-5">
                   <div className="flex justify-between items-start gap-4">
@@ -147,7 +181,14 @@ export default function AdminPage() {
         {/* Projecten */}
         {actieveTab === 'projecten' && (
           <div className="space-y-3">
-            {projecten.map((p, i) => (
+            {projecten.length === 0 ? (
+              <div className="animate-fade-up card p-14 text-center">
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3" style={{ background: 'var(--gradient-subtle)' }}>
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ color: 'var(--accent-3)' }}><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" /><polyline points="13 2 13 9 20 9" /></svg>
+                </div>
+                <p className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>Er zijn nog geen studentprojecten.</p>
+              </div>
+            ) : projecten.map((p, i) => (
               <div key={p.id}>
                 {bewerkProject?.id === p.id ? (
                   <div className="animate-fade-up card p-5" style={{ borderColor: 'var(--accent-1)' }}>
@@ -201,6 +242,76 @@ export default function AdminPage() {
                 )}
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Gebruikers */}
+        {actieveTab === 'gebruikers' && (
+          <div className="space-y-6">
+            {/* Wachtend op goedkeuring */}
+            <div>
+              <p className="section-label mb-3">Wachtend op goedkeuring ({wachtendGebruikers.length})</p>
+              {wachtendGebruikers.length === 0 ? (
+                <div className="card p-10 text-center">
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3" style={{ background: 'rgba(34,197,94,0.1)' }}>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4ade80" strokeWidth="1.5"><polyline points="20 6 9 17 4 12" /></svg>
+                  </div>
+                  <p className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>Geen openstaande registraties.</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {wachtendGebruikers.map((g, i) => (
+                    <div key={g.id} className={`animate-fade-up animate-fade-up-${Math.min(i + 1, 5)} card`}>
+                      <div className="p-4 flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                          <span className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0" style={{ background: 'var(--gradient)' }}>
+                            {g.name?.charAt(0).toUpperCase() ?? '?'}
+                          </span>
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{g.name}</p>
+                            <p className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>{g.email}</p>
+                          </div>
+                          <span className="badge badge-neutral text-[0.625rem] shrink-0 ml-auto mr-2">
+                            {new Date(g.createdAt).toLocaleDateString('nl-NL')}
+                          </span>
+                        </div>
+                        <div className="flex gap-1.5 shrink-0">
+                          <button onClick={() => keurGebruikerGoed(g.id)} className="text-xs px-3 py-1.5 rounded-lg font-medium" style={{ background: 'rgba(34,197,94,0.12)', color: '#4ade80' }}>Goedkeuren</button>
+                          <button onClick={() => wijsGebruikerAf(g.id)} className="text-xs px-3 py-1.5 rounded-lg font-medium" style={{ background: 'rgba(239,68,68,0.12)', color: '#f87171' }}>Afwijzen</button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Goedgekeurde gebruikers */}
+            <div>
+              <p className="section-label mb-3">Actieve studenten ({goedgekeurdeGebruikers.length})</p>
+              {goedgekeurdeGebruikers.length === 0 ? (
+                <div className="card p-10 text-center">
+                  <p className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>Nog geen actieve studenten.</p>
+                </div>
+              ) : (
+                <div className="card overflow-hidden">
+                  <div className="divide-y" style={{ borderColor: 'var(--border)' }}>
+                    {goedgekeurdeGebruikers.map(g => (
+                      <div key={g.id} className="px-4 py-3 flex items-center gap-3">
+                        <span className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0" style={{ background: 'var(--gradient)' }}>
+                          {g.name?.charAt(0).toUpperCase() ?? '?'}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>{g.name}</p>
+                          <p className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>{g.email}</p>
+                        </div>
+                        <span className="badge badge-success text-[0.625rem] shrink-0">Actief</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>

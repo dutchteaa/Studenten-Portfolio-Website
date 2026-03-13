@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { collection, addDoc, getDocs, query, where, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import Image from 'next/image';
 
 type ProjectType = 'website' | 'game' | 'hardware' | 'overig';
 interface Lid { uid: string; naam: string; email: string; }
@@ -140,7 +141,7 @@ export default function DashboardPage() {
               <div>
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>Afbeelding URL</label>
                 <input placeholder="https://..." value={form.afbeeldingUrl} onChange={e => setForm({ ...form, afbeeldingUrl: e.target.value })} className="input-themed" />
-                {form.afbeeldingUrl && <img src={form.afbeeldingUrl} alt="Preview" className="mt-2 w-full max-h-44 object-cover rounded-lg" style={{ border: '1px solid var(--border)' }} onError={e => (e.currentTarget.style.display = 'none')} onLoad={e => (e.currentTarget.style.display = '')} />}
+                {form.afbeeldingUrl && <div className="relative mt-2 w-full h-44 rounded-lg overflow-hidden" style={{ border: '1px solid var(--border)' }}><Image src={form.afbeeldingUrl} alt="Preview" fill className="object-cover" unoptimized /></div>}
               </div>
               <div>
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>YouTube link <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optioneel — wordt getoond in plaats van afbeelding)</span></label>
@@ -191,7 +192,7 @@ export default function DashboardPage() {
               const isEigenaar = p.studentId === user?.uid;
               return (
                 <div key={p.id} className={`animate-fade-up animate-fade-up-${Math.min(i + 1, 5)} card overflow-hidden`}>
-                  {p.afbeeldingUrl && <img src={p.afbeeldingUrl} alt={p.titel} className="w-full h-40 object-cover" />}
+                  {p.afbeeldingUrl && <div className="relative w-full h-40"><Image src={p.afbeeldingUrl} alt={p.titel} fill className="object-cover" unoptimized /></div>}
                   <div className="p-5 flex flex-col sm:flex-row justify-between items-start gap-4">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap mb-1">

@@ -23,11 +23,11 @@ All data access is **client-side only** — components query Firestore directly 
 - `components/` — Shared UI components (Navbar, Footer, ProjectCard, Spinner)
 - `context/` — AuthContext provider wrapping the app in `layout.tsx`
 - `lib/firebase.ts` — Firebase app initialization (singleton), exports `auth` and `db`
-- `lib/auth.ts` — Register/login/logout helpers; registration restricted to `@novacollege.nl` emails
+- `lib/auth.ts` — Register/login/logout helpers; registration requires admin approval
 
 ### Firestore collections
 
-- **`users`** — `{ uid, email, name, role ('student'|'admin'), createdAt }`
+- **`users`** — `{ uid, email, name, role ('student'|'admin'), approved (boolean), createdAt }`
 - **`projecten`** — Student portfolio projects with `titel`, `beschrijving`, `type ('website'|'game'|'hardware'|'overig')`, `afbeeldingUrl`, links, `leden`
 - **`aanvragen`** — Company project requests with `status ('nieuw'|'goedgekeurd'|'afgewezen')`, `claims` array
 
@@ -39,9 +39,9 @@ All data access is **client-side only** — components query Firestore directly 
 
 ### Three user types
 
-1. **Students** — register, manage portfolio projects, claim company requests
+1. **Students** — register (requires admin approval), manage portfolio projects, claim company requests
 2. **Companies** — submit project requests (no auth required)
-3. **Admins** — approve/manage requests and projects
+3. **Admins** — approve/manage requests, projects, and user registrations
 
 ## UI / Design
 
@@ -54,8 +54,10 @@ All data access is **client-side only** — components query Firestore directly 
 
 ## Features
 
-- `/portfolio` and `/opdrachten` have client-side search (filters on title, description, student name, technologies)
+- `/portfolio` and `/opdrachten` have client-side search with pagination (9 and 6 items per page)
 - `/portfolio` also has type filter buttons (website/game/hardware/overig)
+- `/portfolio` has a modal view for full project details (click any project card)
+- Projects support YouTube video embeds (shown in modal instead of image)
 - `/opdrachten` requires login — redirects to `/login` if not authenticated
 - Students can claim/unclaim opdrachten
 - Dashboard supports team members (search by email, add to project)

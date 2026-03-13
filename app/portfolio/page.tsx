@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import Image from 'next/image';
 import Footer from '@/components/Footer';
 
 type ProjectType = 'website' | 'game' | 'hardware' | 'overig';
@@ -38,6 +39,8 @@ const filterOpties = [
   { value: 'hardware', label: 'Hardware' },
   { value: 'overig', label: 'Overig' },
 ];
+
+const PER_PAGE = 9;
 
 function ProjectModal({ project, onClose }: { project: Project; onClose: () => void }) {
   useEffect(() => {
@@ -77,7 +80,9 @@ function ProjectModal({ project, onClose }: { project: Project; onClose: () => v
           project.mediaType === 'video' ? (
             <video src={project.afbeeldingUrl} controls className="w-full object-contain bg-black rounded-t-2xl" />
           ) : (
-            <img src={project.afbeeldingUrl} alt={project.titel} className="w-full object-contain rounded-t-2xl" />
+            <div className="relative w-full rounded-t-2xl overflow-hidden">
+              <Image src={project.afbeeldingUrl} alt={project.titel} width={672} height={400} className="w-full h-auto object-contain" unoptimized />
+            </div>
           )
         ) : (
           <div className="w-full h-40 flex items-center justify-center text-5xl rounded-t-2xl" style={{ background: 'var(--gradient-subtle)' }}>
@@ -126,12 +131,56 @@ function ProjectModal({ project, onClose }: { project: Project; onClose: () => v
   );
 }
 
+function Pagination({ pagina, totaalPaginas, setPagina }: { pagina: number; totaalPaginas: number; setPagina: (p: number) => void }) {
+  if (totaalPaginas <= 1) return null;
+  return (
+    <div className="flex items-center justify-center gap-2 mt-8">
+      <button
+        onClick={() => setPagina(pagina - 1)}
+        disabled={pagina === 1}
+        className="px-3 py-1.5 rounded-lg text-sm font-medium transition-all"
+        style={pagina === 1
+          ? { background: 'var(--bg-card)', color: 'var(--text-muted)', opacity: 0.5, border: '1px solid var(--border)' }
+          : { background: 'var(--bg-card)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }
+        }
+      >
+        Vorige
+      </button>
+      {Array.from({ length: totaalPaginas }, (_, i) => i + 1).map(p => (
+        <button
+          key={p}
+          onClick={() => setPagina(p)}
+          className="w-8 h-8 rounded-lg text-sm font-medium transition-all"
+          style={p === pagina
+            ? { background: 'var(--gradient)', color: '#fff' }
+            : { background: 'var(--bg-card)', color: 'var(--text-muted)', border: '1px solid var(--border)' }
+          }
+        >
+          {p}
+        </button>
+      ))}
+      <button
+        onClick={() => setPagina(pagina + 1)}
+        disabled={pagina === totaalPaginas}
+        className="px-3 py-1.5 rounded-lg text-sm font-medium transition-all"
+        style={pagina === totaalPaginas
+          ? { background: 'var(--bg-card)', color: 'var(--text-muted)', opacity: 0.5, border: '1px solid var(--border)' }
+          : { background: 'var(--bg-card)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }
+        }
+      >
+        Volgende
+      </button>
+    </div>
+  );
+}
+
 export default function PortfolioPage() {
   const [projecten, setProjecten] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [actieveFilter, setActieveFilter] = useState('alles');
   const [zoekterm, setZoekterm] = useState('');
   const [geselecteerd, setGeselecteerd] = useState<Project | null>(null);
+  const [pagina, setPagina] = useState(1);
 
   useEffect(() => {
     async function laadProjecten() {
@@ -142,6 +191,9 @@ export default function PortfolioPage() {
     laadProjecten();
   }, []);
 
+  // Reset to page 1 when filter/search changes
+  useEffect(() => { setPagina(1); }, [actieveFilter, zoekterm]);
+
   const gefilterd = projecten.filter(p => {
     if (actieveFilter !== 'alles' && (p.type ?? 'overig') !== actieveFilter) return false;
     if (!zoekterm.trim()) return true;
@@ -151,6 +203,9 @@ export default function PortfolioPage() {
       || p.studentNaam.toLowerCase().includes(term)
       || (p.leden ?? []).some(l => l.naam.toLowerCase().includes(term));
   });
+
+  const totaalPaginas = Math.max(1, Math.ceil(gefilterd.length / PER_PAGE));
+  const paginaProjecten = gefilterd.slice((pagina - 1) * PER_PAGE, pagina * PER_PAGE);
 
   if (loading) {
     return (
@@ -226,43 +281,48 @@ export default function PortfolioPage() {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-              {gefilterd.map((project, i) => (
-                <div
-                  key={project.id}
-                  onClick={() => setGeselecteerd(project)}
-                  className={`animate-fade-up animate-fade-up-${Math.min(i + 1, 5)} card card-lift overflow-hidden cursor-pointer`}
-                >
-                  {project.afbeeldingUrl ? (
-                    project.mediaType === 'video' ? (
-                      <video src={project.afbeeldingUrl} controls className="w-full h-48 object-contain bg-black" onClick={e => e.stopPropagation()} />
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                {paginaProjecten.map((project, i) => (
+                  <div
+                    key={project.id}
+                    onClick={() => setGeselecteerd(project)}
+                    className={`animate-fade-up animate-fade-up-${Math.min(i + 1, 5)} card card-lift overflow-hidden cursor-pointer`}
+                  >
+                    {project.afbeeldingUrl ? (
+                      project.mediaType === 'video' ? (
+                        <video src={project.afbeeldingUrl} controls className="w-full h-48 object-contain bg-black" onClick={e => e.stopPropagation()} />
+                      ) : (
+                        <div className="relative w-full h-48">
+                          <Image src={project.afbeeldingUrl} alt={project.titel} fill className="object-cover" unoptimized />
+                        </div>
+                      )
                     ) : (
-                      <img src={project.afbeeldingUrl} alt={project.titel} className="w-full h-48 object-cover" />
-                    )
-                  ) : (
-                    <div className="w-full h-48 flex items-center justify-center text-3xl" style={{ background: 'var(--gradient-subtle)' }}>
-                      {typeIcons[project.type ?? 'overig']}
-                    </div>
-                  )}
-                  <div className="p-5">
-                    <div className="flex items-start gap-2 mb-1">
-                      <h2 className="text-[0.9375rem] font-semibold flex-1" style={{ color: 'var(--text-primary)' }}>{project.titel}</h2>
-                      {project.type && <span className="badge badge-accent text-[0.625rem] shrink-0">{typeLabels[project.type]}</span>}
-                    </div>
-                    <p className="text-xs font-medium" style={{ color: 'var(--accent-3)' }}>
-                      {(project.leden && project.leden.length > 0) ? project.leden.map(l => l.naam).join(', ') : project.studentNaam}
-                    </p>
-                    <p className="mt-2.5 text-sm leading-relaxed line-clamp-3" style={{ color: 'var(--text-muted)' }}>{project.beschrijving}</p>
-                    {(project.githubLink || project.demoLink) && (
-                      <div className="flex gap-2 mt-4 pt-3" style={{ borderTop: '1px solid var(--border)' }}>
-                        {project.githubLink && <a href={project.githubLink} target="_blank" rel="noopener noreferrer" className="btn-secondary text-xs py-1.5 px-3" onClick={e => e.stopPropagation()}>GitHub</a>}
-                        {project.demoLink && <a href={project.demoLink} target="_blank" rel="noopener noreferrer" className="btn-primary text-xs py-1.5 px-3" onClick={e => e.stopPropagation()}>Live demo</a>}
+                      <div className="w-full h-48 flex items-center justify-center text-3xl" style={{ background: 'var(--gradient-subtle)' }}>
+                        {typeIcons[project.type ?? 'overig']}
                       </div>
                     )}
+                    <div className="p-5">
+                      <div className="flex items-start gap-2 mb-1">
+                        <h2 className="text-[0.9375rem] font-semibold flex-1" style={{ color: 'var(--text-primary)' }}>{project.titel}</h2>
+                        {project.type && <span className="badge badge-accent text-[0.625rem] shrink-0">{typeLabels[project.type]}</span>}
+                      </div>
+                      <p className="text-xs font-medium" style={{ color: 'var(--accent-3)' }}>
+                        {(project.leden && project.leden.length > 0) ? project.leden.map(l => l.naam).join(', ') : project.studentNaam}
+                      </p>
+                      <p className="mt-2.5 text-sm leading-relaxed line-clamp-3" style={{ color: 'var(--text-muted)' }}>{project.beschrijving}</p>
+                      {(project.githubLink || project.demoLink) && (
+                        <div className="flex gap-2 mt-4 pt-3" style={{ borderTop: '1px solid var(--border)' }}>
+                          {project.githubLink && <a href={project.githubLink} target="_blank" rel="noopener noreferrer" className="btn-secondary text-xs py-1.5 px-3" onClick={e => e.stopPropagation()}>GitHub</a>}
+                          {project.demoLink && <a href={project.demoLink} target="_blank" rel="noopener noreferrer" className="btn-primary text-xs py-1.5 px-3" onClick={e => e.stopPropagation()}>Live demo</a>}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+              <Pagination pagina={pagina} totaalPaginas={totaalPaginas} setPagina={setPagina} />
+            </>
           )}
 
           {/* CTA */}

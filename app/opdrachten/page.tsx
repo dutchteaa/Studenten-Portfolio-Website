@@ -13,6 +13,51 @@ interface Aanvraag {
   status: string; claims?: Claim[];
 }
 
+const PER_PAGE = 6;
+
+function Pagination({ pagina, totaalPaginas, setPagina }: { pagina: number; totaalPaginas: number; setPagina: (p: number) => void }) {
+  if (totaalPaginas <= 1) return null;
+  return (
+    <div className="flex items-center justify-center gap-2 mt-8">
+      <button
+        onClick={() => setPagina(pagina - 1)}
+        disabled={pagina === 1}
+        className="px-3 py-1.5 rounded-lg text-sm font-medium transition-all"
+        style={pagina === 1
+          ? { background: 'var(--bg-card)', color: 'var(--text-muted)', opacity: 0.5, border: '1px solid var(--border)' }
+          : { background: 'var(--bg-card)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }
+        }
+      >
+        Vorige
+      </button>
+      {Array.from({ length: totaalPaginas }, (_, i) => i + 1).map(p => (
+        <button
+          key={p}
+          onClick={() => setPagina(p)}
+          className="w-8 h-8 rounded-lg text-sm font-medium transition-all"
+          style={p === pagina
+            ? { background: 'var(--gradient)', color: '#fff' }
+            : { background: 'var(--bg-card)', color: 'var(--text-muted)', border: '1px solid var(--border)' }
+          }
+        >
+          {p}
+        </button>
+      ))}
+      <button
+        onClick={() => setPagina(pagina + 1)}
+        disabled={pagina === totaalPaginas}
+        className="px-3 py-1.5 rounded-lg text-sm font-medium transition-all"
+        style={pagina === totaalPaginas
+          ? { background: 'var(--bg-card)', color: 'var(--text-muted)', opacity: 0.5, border: '1px solid var(--border)' }
+          : { background: 'var(--bg-card)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }
+        }
+      >
+        Volgende
+      </button>
+    </div>
+  );
+}
+
 export default function OpdrachtenPage() {
   const { user, naam, role, loading: authLoading } = useAuth();
   const router = useRouter();
@@ -22,6 +67,7 @@ export default function OpdrachtenPage() {
   const [unclaimingId, setUnclaimingId] = useState<string | null>(null);
   const [openClaims, setOpenClaims] = useState<string | null>(null);
   const [zoekterm, setZoekterm] = useState('');
+  const [pagina, setPagina] = useState(1);
 
   useEffect(() => {
     if (!authLoading && !user) router.push('/login');
@@ -35,6 +81,9 @@ export default function OpdrachtenPage() {
   }
 
   useEffect(() => { if (user) laadAanvragen(); }, [user]);
+
+  // Reset to page 1 when search changes
+  useEffect(() => { setPagina(1); }, [zoekterm]);
 
   async function claimOpdracht(id: string) {
     if (!user) return; setClaimingId(id);
@@ -58,6 +107,9 @@ export default function OpdrachtenPage() {
       || (a.technologieen ?? '').toLowerCase().includes(term)
       || a.contactpersoon.toLowerCase().includes(term);
   });
+
+  const totaalPaginas = Math.max(1, Math.ceil(gefilterd.length / PER_PAGE));
+  const paginaItems = gefilterd.slice((pagina - 1) * PER_PAGE, pagina * PER_PAGE);
 
   if (authLoading || loading) {
     return (
@@ -114,81 +166,84 @@ export default function OpdrachtenPage() {
             </p>
           </div>
         ) : (
-          <div className="space-y-4">
-            {gefilterd.map((a, i) => {
-              const claims = a.claims ?? [];
-              const alGeclaimd = heeftGeclaimd(a);
-              const isOpen = openClaims === a.id;
-              return (
-                <div key={a.id} className={`animate-fade-up animate-fade-up-${Math.min(i + 1, 5)} card overflow-hidden`}>
-                  <div className="p-5">
-                    <div className="flex items-start justify-between gap-4 flex-wrap">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                          <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>{a.bedrijfsnaam}</h2>
-                          <span className="badge badge-success text-[0.625rem]">Goedgekeurd</span>
-                          {claims.length > 0 && <span className="badge badge-accent text-[0.625rem]">{claims.length} student{claims.length !== 1 ? 'en' : ''}</span>}
+          <>
+            <div className="space-y-4">
+              {paginaItems.map((a, i) => {
+                const claims = a.claims ?? [];
+                const alGeclaimd = heeftGeclaimd(a);
+                const isOpen = openClaims === a.id;
+                return (
+                  <div key={a.id} className={`animate-fade-up animate-fade-up-${Math.min(i + 1, 5)} card overflow-hidden`}>
+                    <div className="p-5">
+                      <div className="flex items-start justify-between gap-4 flex-wrap">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                            <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>{a.bedrijfsnaam}</h2>
+                            <span className="badge badge-success text-[0.625rem]">Goedgekeurd</span>
+                            {claims.length > 0 && <span className="badge badge-accent text-[0.625rem]">{claims.length} student{claims.length !== 1 ? 'en' : ''}</span>}
+                          </div>
+                          <p className="text-sm leading-relaxed mt-2" style={{ color: 'var(--text-secondary)' }}>{a.projectomschrijving}</p>
+                          <div className="flex flex-wrap gap-4 mt-3">
+                            {a.technologieen && (
+                              <div>
+                                <p className="text-[0.625rem] font-semibold uppercase tracking-wider mb-1" style={{ color: 'var(--text-muted)' }}>Technologieen</p>
+                                <div className="flex flex-wrap gap-1">
+                                  {a.technologieen.split(',').map((t, idx) => <span key={idx} className="badge badge-neutral text-[0.625rem] font-mono">{t.trim()}</span>)}
+                                </div>
+                              </div>
+                            )}
+                            {a.deadline && <div><p className="text-[0.625rem] font-semibold uppercase tracking-wider mb-1" style={{ color: 'var(--text-muted)' }}>Deadline</p><p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{a.deadline}</p></div>}
+                            {a.tijdsduur && <div><p className="text-[0.625rem] font-semibold uppercase tracking-wider mb-1" style={{ color: 'var(--text-muted)' }}>Duur</p><p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{a.tijdsduur}</p></div>}
+                          </div>
                         </div>
-                        <p className="text-sm leading-relaxed mt-2" style={{ color: 'var(--text-secondary)' }}>{a.projectomschrijving}</p>
-                        <div className="flex flex-wrap gap-4 mt-3">
-                          {a.technologieen && (
-                            <div>
-                              <p className="text-[0.625rem] font-semibold uppercase tracking-wider mb-1" style={{ color: 'var(--text-muted)' }}>Technologieen</p>
-                              <div className="flex flex-wrap gap-1">
-                                {a.technologieen.split(',').map((t, idx) => <span key={idx} className="badge badge-neutral text-[0.625rem] font-mono">{t.trim()}</span>)}
+                        <div className="flex flex-col gap-2.5 shrink-0 min-w-[160px]">
+                          <div className="rounded-xl p-3.5" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+                            <p className="text-[0.625rem] font-semibold uppercase tracking-wider mb-1.5" style={{ color: 'var(--text-muted)' }}>Contact</p>
+                            <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{a.contactpersoon}</p>
+                            <a href={`mailto:${a.email}`} className="text-xs block mt-0.5 hover:underline" style={{ color: 'var(--accent-3)' }}>{a.email}</a>
+                          </div>
+                          {alGeclaimd ? (
+                            <div className="space-y-1.5">
+                              <div className="badge badge-success w-full justify-center py-2.5 text-xs font-semibold">Geclaimed</div>
+                              <button onClick={() => unclaimOpdracht(a)} disabled={unclaimingId === a.id} className="text-xs font-medium w-full py-2.5 rounded-lg text-center" style={{ background: 'rgba(239,68,68,0.12)', color: '#f87171' }}>
+                                {unclaimingId === a.id ? 'Bezig...' : 'Claim intrekken'}
+                              </button>
+                            </div>
+                          ) : (
+                            <button onClick={() => claimOpdracht(a.id)} disabled={claimingId === a.id} className="btn-primary w-full text-sm py-2.5">
+                              {claimingId === a.id ? 'Bezig...' : 'Claim opdracht'}
+                            </button>
+                          )}
+                          {(role === 'admin' || claims.length > 0) && (
+                            <button onClick={() => setOpenClaims(isOpen ? null : a.id)} className="btn-ghost text-xs justify-center">
+                              {isOpen ? 'Verberg' : `Bekijk claims (${claims.length})`}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    {isOpen && claims.length > 0 && (
+                      <div className="px-5 pb-5 pt-0" style={{ borderTop: '1px solid var(--border)' }}>
+                        <p className="section-label mt-4 mb-2.5">Geclaimd door</p>
+                        <div className="flex flex-wrap gap-2">
+                          {claims.map((c, idx) => (
+                            <div key={idx} className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+                              <span className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0" style={{ background: 'var(--gradient)' }}>{c.naam.charAt(0).toUpperCase()}</span>
+                              <div>
+                                <p className="font-medium text-sm leading-tight" style={{ color: 'var(--text-primary)' }}>{c.naam}</p>
+                                <p className="text-[0.6875rem]" style={{ color: 'var(--text-muted)' }}>{new Date(c.claimedAt).toLocaleDateString('nl-NL')}</p>
                               </div>
                             </div>
-                          )}
-                          {a.deadline && <div><p className="text-[0.625rem] font-semibold uppercase tracking-wider mb-1" style={{ color: 'var(--text-muted)' }}>Deadline</p><p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{a.deadline}</p></div>}
-                          {a.tijdsduur && <div><p className="text-[0.625rem] font-semibold uppercase tracking-wider mb-1" style={{ color: 'var(--text-muted)' }}>Duur</p><p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{a.tijdsduur}</p></div>}
+                          ))}
                         </div>
                       </div>
-                      <div className="flex flex-col gap-2.5 shrink-0 min-w-[160px]">
-                        <div className="rounded-xl p-3.5" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-                          <p className="text-[0.625rem] font-semibold uppercase tracking-wider mb-1.5" style={{ color: 'var(--text-muted)' }}>Contact</p>
-                          <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{a.contactpersoon}</p>
-                          <a href={`mailto:${a.email}`} className="text-xs block mt-0.5 hover:underline" style={{ color: 'var(--accent-3)' }}>{a.email}</a>
-                        </div>
-                        {alGeclaimd ? (
-                          <div className="space-y-1.5">
-                            <div className="badge badge-success w-full justify-center py-2.5 text-xs font-semibold">Geclaimed</div>
-                            <button onClick={() => unclaimOpdracht(a)} disabled={unclaimingId === a.id} className="text-xs font-medium w-full py-2.5 rounded-lg text-center" style={{ background: 'rgba(239,68,68,0.12)', color: '#f87171' }}>
-                              {unclaimingId === a.id ? 'Bezig...' : 'Claim intrekken'}
-                            </button>
-                          </div>
-                        ) : (
-                          <button onClick={() => claimOpdracht(a.id)} disabled={claimingId === a.id} className="btn-primary w-full text-sm py-2.5">
-                            {claimingId === a.id ? 'Bezig...' : 'Claim opdracht'}
-                          </button>
-                        )}
-                        {(role === 'admin' || claims.length > 0) && (
-                          <button onClick={() => setOpenClaims(isOpen ? null : a.id)} className="btn-ghost text-xs justify-center">
-                            {isOpen ? 'Verberg' : `Bekijk claims (${claims.length})`}
-                          </button>
-                        )}
-                      </div>
-                    </div>
+                    )}
                   </div>
-                  {isOpen && claims.length > 0 && (
-                    <div className="px-5 pb-5 pt-0" style={{ borderTop: '1px solid var(--border)' }}>
-                      <p className="section-label mt-4 mb-2.5">Geclaimd door</p>
-                      <div className="flex flex-wrap gap-2">
-                        {claims.map((c, idx) => (
-                          <div key={idx} className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-                            <span className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0" style={{ background: 'var(--gradient)' }}>{c.naam.charAt(0).toUpperCase()}</span>
-                            <div>
-                              <p className="font-medium text-sm leading-tight" style={{ color: 'var(--text-primary)' }}>{c.naam}</p>
-                              <p className="text-[0.6875rem]" style={{ color: 'var(--text-muted)' }}>{new Date(c.claimedAt).toLocaleDateString('nl-NL')}</p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+            <Pagination pagina={pagina} totaalPaginas={totaalPaginas} setPagina={setPagina} />
+          </>
         )}
 
         <div className="mt-10 rounded-2xl p-[1px]" style={{ background: 'linear-gradient(135deg, var(--accent-1), var(--accent-2), transparent)' }}>

@@ -7,6 +7,23 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/context/AuthContext';
 
+function firebaseErrorMessage(err: unknown): string {
+  if (!(err instanceof Error)) return 'Er ging iets mis. Probeer het opnieuw.';
+  const msg = err.message;
+  if (msg === 'ACCOUNT_NOT_APPROVED') return 'Je account is nog niet goedgekeurd door een beheerder.';
+  if (msg.includes('auth/invalid-credential') || msg.includes('auth/wrong-password') || msg.includes('auth/user-not-found'))
+    return 'E-mailadres of wachtwoord onjuist.';
+  if (msg.includes('auth/too-many-requests'))
+    return 'Te veel pogingen. Probeer het later opnieuw.';
+  if (msg.includes('auth/invalid-email'))
+    return 'Ongeldig e-mailadres.';
+  if (msg.includes('auth/user-disabled'))
+    return 'Dit account is uitgeschakeld.';
+  if (msg.includes('auth/network-request-failed'))
+    return 'Geen internetverbinding. Controleer je netwerk.';
+  return 'Er ging iets mis. Probeer het opnieuw.';
+}
+
 export default function LoginPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
@@ -14,6 +31,7 @@ export default function LoginPage() {
   useEffect(() => {
     if (!authLoading && user) router.push('/dashboard');
   }, [user, authLoading, router]);
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -27,8 +45,8 @@ export default function LoginPage() {
       const userDoc = await getDoc(doc(db, 'users', user.uid));
       const role = userDoc.data()?.role;
       router.push(role === 'admin' ? '/admin' : '/dashboard');
-    } catch {
-      setError('E-mailadres of wachtwoord onjuist');
+    } catch (err) {
+      setError(firebaseErrorMessage(err));
       setLoading(false);
     }
   }
@@ -51,7 +69,7 @@ export default function LoginPage() {
           <div className="space-y-3">
             <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>E-mailadres</label>
-              <input type="email" placeholder="naam@novacollege.nl" value={email} onChange={e => setEmail(e.target.value)} className="input-themed" />
+              <input type="email" placeholder="naam@email.nl" value={email} onChange={e => setEmail(e.target.value)} className="input-themed" />
             </div>
             <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>Wachtwoord</label>
