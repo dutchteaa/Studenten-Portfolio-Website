@@ -96,7 +96,8 @@ export default function OpdrachtenPage() {
               placeholder="Zoek op bedrijf, omschrijving of technologie..."
               value={zoekterm}
               onChange={e => setZoekterm(e.target.value)}
-              className="input-themed pl-10"
+              className="input-themed"
+              style={{ paddingLeft: '2.5rem' }}
             />
           </div>
         </div>

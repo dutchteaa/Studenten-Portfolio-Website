@@ -33,11 +33,90 @@ const filterOpties = [
   { value: 'overig', label: 'Overig' },
 ];
 
+function ProjectModal({ project, onClose }: { project: Project; onClose: () => void }) {
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') onClose(); }
+    document.addEventListener('keydown', onKey);
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = '';
+    };
+  }, [onClose]);
+
+  const leden = project.leden && project.leden.length > 0 ? project.leden.map(l => l.naam).join(', ') : project.studentNaam;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}
+      onClick={onClose}
+    >
+      <div
+        className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl"
+        style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', boxShadow: 'var(--glow)' }}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Media */}
+        {project.afbeeldingUrl ? (
+          project.mediaType === 'video' ? (
+            <video src={project.afbeeldingUrl} controls className="w-full max-h-72 object-contain bg-black rounded-t-2xl" />
+          ) : (
+            <img src={project.afbeeldingUrl} alt={project.titel} className="w-full max-h-72 object-cover rounded-t-2xl" />
+          )
+        ) : (
+          <div className="w-full h-40 flex items-center justify-center text-5xl rounded-t-2xl" style={{ background: 'var(--gradient-subtle)' }}>
+            {typeIcons[project.type ?? 'overig']}
+          </div>
+        )}
+
+        {/* Close button */}
+        <button
+          onClick={onClose}
+          className="absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center"
+          style={{ background: 'rgba(0,0,0,0.5)', color: '#fff' }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+            <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+
+        {/* Content */}
+        <div className="p-6">
+          <div className="flex items-start gap-3 mb-1">
+            <h2 className="text-xl font-bold flex-1" style={{ color: 'var(--text-primary)' }}>{project.titel}</h2>
+            {project.type && <span className="badge badge-accent shrink-0">{typeLabels[project.type]}</span>}
+          </div>
+          <p className="text-sm font-medium mb-4" style={{ color: 'var(--accent-3)' }}>{leden}</p>
+
+          <p className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: 'var(--text-secondary)' }}>{project.beschrijving}</p>
+
+          {(project.githubLink || project.demoLink) && (
+            <div className="flex gap-3 mt-6 pt-5" style={{ borderTop: '1px solid var(--border)' }}>
+              {project.githubLink && (
+                <a href={project.githubLink} target="_blank" rel="noopener noreferrer" className="btn-secondary py-2 px-4">
+                  GitHub
+                </a>
+              )}
+              {project.demoLink && (
+                <a href={project.demoLink} target="_blank" rel="noopener noreferrer" className="btn-primary py-2 px-4">
+                  Live demo
+                </a>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function PortfolioPage() {
   const [projecten, setProjecten] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [actieveFilter, setActieveFilter] = useState('alles');
   const [zoekterm, setZoekterm] = useState('');
+  const [geselecteerd, setGeselecteerd] = useState<Project | null>(null);
 
   useEffect(() => {
     async function laadProjecten() {
@@ -71,6 +150,8 @@ export default function PortfolioPage() {
 
   return (
     <div className="min-h-screen flex flex-col">
+      {geselecteerd && <ProjectModal project={geselecteerd} onClose={() => setGeselecteerd(null)} />}
+
       <div className="flex-1">
         {/* Header */}
         <div className="pt-12 pb-8 px-5 relative">
@@ -94,7 +175,8 @@ export default function PortfolioPage() {
                 placeholder="Zoek op titel, student of beschrijving..."
                 value={zoekterm}
                 onChange={e => setZoekterm(e.target.value)}
-                className="input-themed pl-10"
+                className="input-themed"
+                style={{ paddingLeft: '2.5rem' }}
               />
             </div>
 
@@ -131,10 +213,14 @@ export default function PortfolioPage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               {gefilterd.map((project, i) => (
-                <div key={project.id} className={`animate-fade-up animate-fade-up-${Math.min(i + 1, 5)} card card-lift overflow-hidden`}>
+                <div
+                  key={project.id}
+                  onClick={() => setGeselecteerd(project)}
+                  className={`animate-fade-up animate-fade-up-${Math.min(i + 1, 5)} card card-lift overflow-hidden cursor-pointer`}
+                >
                   {project.afbeeldingUrl ? (
                     project.mediaType === 'video' ? (
-                      <video src={project.afbeeldingUrl} controls className="w-full h-48 object-contain bg-black" />
+                      <video src={project.afbeeldingUrl} controls className="w-full h-48 object-contain bg-black" onClick={e => e.stopPropagation()} />
                     ) : (
                       <img src={project.afbeeldingUrl} alt={project.titel} className="w-full h-48 object-cover" />
                     )
@@ -154,8 +240,8 @@ export default function PortfolioPage() {
                     <p className="mt-2.5 text-sm leading-relaxed line-clamp-3" style={{ color: 'var(--text-muted)' }}>{project.beschrijving}</p>
                     {(project.githubLink || project.demoLink) && (
                       <div className="flex gap-2 mt-4 pt-3" style={{ borderTop: '1px solid var(--border)' }}>
-                        {project.githubLink && <a href={project.githubLink} target="_blank" rel="noopener noreferrer" className="btn-secondary text-xs py-1.5 px-3">GitHub</a>}
-                        {project.demoLink && <a href={project.demoLink} target="_blank" rel="noopener noreferrer" className="btn-primary text-xs py-1.5 px-3">Live demo</a>}
+                        {project.githubLink && <a href={project.githubLink} target="_blank" rel="noopener noreferrer" className="btn-secondary text-xs py-1.5 px-3" onClick={e => e.stopPropagation()}>GitHub</a>}
+                        {project.demoLink && <a href={project.demoLink} target="_blank" rel="noopener noreferrer" className="btn-primary text-xs py-1.5 px-3" onClick={e => e.stopPropagation()}>Live demo</a>}
                       </div>
                     )}
                   </div>
