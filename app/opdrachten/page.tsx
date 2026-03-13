@@ -160,6 +160,7 @@ export default function OpdrachtenPage() {
                             </span>
                           )}
                         </div>
+<<<<<<< Updated upstream
 
                         <p className="text-sm leading-relaxed mt-3" style={{ color: 'var(--text-dark)' }}>
                           {a.projectomschrijving}
@@ -223,6 +224,18 @@ export default function OpdrachtenPage() {
                                 {unclaimingId === a.id ? 'Bezig...' : 'Claim intrekken'}
                               </button>
                             </div>
+=======
+                        <div className="flex flex-col gap-2.5 shrink-0 min-w-[160px]">
+                          <div className="rounded-xl p-3.5" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+                            <p className="text-[0.625rem] font-semibold uppercase tracking-wider mb-1.5" style={{ color: 'var(--text-muted)' }}>Contact</p>
+                            <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{a.contactpersoon}</p>
+                            <a href={`mailto:${a.email}`} className="text-xs block mt-0.5 hover:underline" style={{ color: 'var(--accent-3)' }}>{a.email}</a>
+                          </div>
+                          {alGeclaimd ? (
+                            <button onClick={() => unclaimOpdracht(a)} disabled={unclaimingId === a.id} className="text-xs font-medium w-full py-2.5 rounded-lg text-center" style={{ background: 'rgba(239,68,68,0.12)', color: '#f87171' }}>
+                              {unclaimingId === a.id ? 'Bezig...' : 'Claim intrekken'}
+                            </button>
+>>>>>>> Stashed changes
                           ) : (
                             <button
                               onClick={() => claimOpdracht(a.id)}
