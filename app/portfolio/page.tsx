@@ -17,9 +17,15 @@ interface Project {
   demoLink: string;
   afbeeldingUrl: string;
   mediaType?: 'image' | 'video';
+  youtubeUrl?: string;
   studentNaam: string;
   type?: ProjectType;
   leden?: Lid[];
+}
+
+function getYoutubeEmbedUrl(url: string): string | null {
+  const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\s]+)/);
+  return match ? `https://www.youtube.com/embed/${match[1]}` : null;
 }
 
 const typeLabels: Record<string, string> = { website: 'Website', game: 'Game', hardware: 'Hardware', overig: 'Overig' };
@@ -58,11 +64,20 @@ function ProjectModal({ project, onClose }: { project: Project; onClose: () => v
         onClick={e => e.stopPropagation()}
       >
         {/* Media */}
-        {project.afbeeldingUrl ? (
+        {project.youtubeUrl && getYoutubeEmbedUrl(project.youtubeUrl) ? (
+          <div className="w-full rounded-t-2xl overflow-hidden" style={{ aspectRatio: '16/9' }}>
+            <iframe
+              src={getYoutubeEmbedUrl(project.youtubeUrl)!}
+              className="w-full h-full"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
+        ) : project.afbeeldingUrl ? (
           project.mediaType === 'video' ? (
-            <video src={project.afbeeldingUrl} controls className="w-full max-h-72 object-contain bg-black rounded-t-2xl" />
+            <video src={project.afbeeldingUrl} controls className="w-full object-contain bg-black rounded-t-2xl" />
           ) : (
-            <img src={project.afbeeldingUrl} alt={project.titel} className="w-full max-h-72 object-cover rounded-t-2xl" />
+            <img src={project.afbeeldingUrl} alt={project.titel} className="w-full object-contain rounded-t-2xl" />
           )
         ) : (
           <div className="w-full h-40 flex items-center justify-center text-5xl rounded-t-2xl" style={{ background: 'var(--gradient-subtle)' }}>

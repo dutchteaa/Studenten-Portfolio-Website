@@ -10,10 +10,10 @@ type ProjectType = 'website' | 'game' | 'hardware' | 'overig';
 interface Lid { uid: string; naam: string; email: string; }
 interface Project {
   id: string; titel: string; beschrijving: string; githubLink: string; demoLink: string;
-  afbeeldingUrl: string; type: ProjectType; leden: Lid[]; studentId: string; studentNaam: string;
+  afbeeldingUrl: string; youtubeUrl?: string; type: ProjectType; leden: Lid[]; studentId: string; studentNaam: string;
 }
 
-const leegForm = { titel: '', beschrijving: '', githubLink: '', demoLink: '', afbeeldingUrl: '', type: 'website' as ProjectType };
+const leegForm = { titel: '', beschrijving: '', githubLink: '', demoLink: '', afbeeldingUrl: '', youtubeUrl: '', type: 'website' as ProjectType };
 const typeLabels: Record<ProjectType, string> = { website: 'Website', game: 'Game', hardware: 'Hardware', overig: 'Overig' };
 
 export default function DashboardPage() {
@@ -43,7 +43,7 @@ export default function DashboardPage() {
 
   function openNieuwFormulier() { setForm(leegForm); setFormulierLeden([]); setLedenZoek(''); setLedenZoekResultaat(null); setBewerkId(null); setToonFormulier(true); }
   function openBewerkFormulier(p: Project) {
-    setForm({ titel: p.titel, beschrijving: p.beschrijving, githubLink: p.githubLink ?? '', demoLink: p.demoLink ?? '', afbeeldingUrl: p.afbeeldingUrl ?? '', type: p.type ?? 'website' });
+    setForm({ titel: p.titel, beschrijving: p.beschrijving, githubLink: p.githubLink ?? '', demoLink: p.demoLink ?? '', afbeeldingUrl: p.afbeeldingUrl ?? '', youtubeUrl: p.youtubeUrl ?? '', type: p.type ?? 'website' });
     setFormulierLeden((p.leden ?? []).filter(l => l.uid !== p.studentId)); setLedenZoek(''); setLedenZoekResultaat(null); setBewerkId(p.id); setToonFormulier(true);
   }
   function sluitFormulier() { setToonFormulier(false); setBewerkId(null); setForm(leegForm); setFormulierLeden([]); setLedenZoek(''); setLedenZoekResultaat(null); setOpslaanFout(''); setOpslaanBezig(false); }
@@ -141,6 +141,10 @@ export default function DashboardPage() {
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>Afbeelding URL</label>
                 <input placeholder="https://..." value={form.afbeeldingUrl} onChange={e => setForm({ ...form, afbeeldingUrl: e.target.value })} className="input-themed" />
                 {form.afbeeldingUrl && <img src={form.afbeeldingUrl} alt="Preview" className="mt-2 w-full max-h-44 object-cover rounded-lg" style={{ border: '1px solid var(--border)' }} onError={e => (e.currentTarget.style.display = 'none')} onLoad={e => (e.currentTarget.style.display = '')} />}
+              </div>
+              <div>
+                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>YouTube link <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optioneel — wordt getoond in plaats van afbeelding)</span></label>
+                <input placeholder="https://www.youtube.com/watch?v=..." value={form.youtubeUrl} onChange={e => setForm({ ...form, youtubeUrl: e.target.value })} className="input-themed" />
               </div>
               {/* Leden */}
               <div className="pt-2">
