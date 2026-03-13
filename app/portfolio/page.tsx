@@ -3,14 +3,12 @@
 import { useEffect, useState } from 'react';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import Image from 'next/image';
+import Footer from '@/components/Footer';
 
 type ProjectType = 'website' | 'game' | 'hardware' | 'overig';
 
-interface Lid {
-  uid: string;
-  naam: string;
-  email: string;
-}
+interface Lid { uid: string; naam: string; email: string; }
 
 interface Project {
   id: string;
@@ -20,30 +18,169 @@ interface Project {
   demoLink: string;
   afbeeldingUrl: string;
   mediaType?: 'image' | 'video';
+  youtubeUrl?: string;
   studentNaam: string;
   type?: ProjectType;
   leden?: Lid[];
 }
 
-const typeLabels: Record<string, string> = {
-  website: '🌐 Website',
-  game: '🎮 Game',
-  hardware: '🔧 Hardware',
-  overig: '📦 Overig',
-};
+function getYoutubeEmbedUrl(url: string): string | null {
+  const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\s]+)/);
+  return match ? `https://www.youtube.com/embed/${match[1]}` : null;
+}
+
+const typeLabels: Record<string, string> = { website: 'Website', game: 'Game', hardware: 'Hardware', overig: 'Overig' };
+const typeIcons: Record<string, string> = { website: '\u{1F310}', game: '\u{1F3AE}', hardware: '\u{1F527}', overig: '\u{1F4E6}' };
 
 const filterOpties = [
   { value: 'alles', label: 'Alles' },
-  { value: 'website', label: '🌐 Website' },
-  { value: 'game', label: '🎮 Game' },
-  { value: 'hardware', label: '🔧 Hardware' },
-  { value: 'overig', label: '📦 Overig' },
+  { value: 'website', label: 'Website' },
+  { value: 'game', label: 'Game' },
+  { value: 'hardware', label: 'Hardware' },
+  { value: 'overig', label: 'Overig' },
 ];
+
+const PER_PAGE = 9;
+
+function ProjectModal({ project, onClose }: { project: Project; onClose: () => void }) {
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') onClose(); }
+    document.addEventListener('keydown', onKey);
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = '';
+    };
+  }, [onClose]);
+
+  const leden = project.leden && project.leden.length > 0 ? project.leden.map(l => l.naam).join(', ') : project.studentNaam;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}
+      onClick={onClose}
+    >
+      <div
+        className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl"
+        style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', boxShadow: 'var(--glow)' }}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Media */}
+        {project.youtubeUrl && getYoutubeEmbedUrl(project.youtubeUrl) ? (
+          <div className="w-full rounded-t-2xl overflow-hidden" style={{ aspectRatio: '16/9' }}>
+            <iframe
+              src={getYoutubeEmbedUrl(project.youtubeUrl)!}
+              className="w-full h-full"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
+        ) : project.afbeeldingUrl ? (
+          project.mediaType === 'video' ? (
+            <video src={project.afbeeldingUrl} controls className="w-full object-contain bg-black rounded-t-2xl" />
+          ) : (
+            <div className="relative w-full rounded-t-2xl overflow-hidden">
+              <Image src={project.afbeeldingUrl} alt={project.titel} width={672} height={400} className="w-full h-auto object-contain" unoptimized />
+            </div>
+          )
+        ) : (
+          <div className="w-full h-40 flex items-center justify-center text-5xl rounded-t-2xl" style={{ background: 'var(--gradient-subtle)' }}>
+            {typeIcons[project.type ?? 'overig']}
+          </div>
+        )}
+
+        {/* Close button */}
+        <button
+          onClick={onClose}
+          className="absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center"
+          style={{ background: 'rgba(0,0,0,0.5)', color: '#fff' }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+            <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+
+        {/* Content */}
+        <div className="p-6">
+          <div className="flex items-start gap-3 mb-1">
+            <h2 className="text-xl font-bold flex-1" style={{ color: 'var(--text-primary)' }}>{project.titel}</h2>
+            {project.type && <span className="badge badge-accent shrink-0">{typeLabels[project.type]}</span>}
+          </div>
+          <p className="text-sm font-medium mb-4" style={{ color: 'var(--accent-3)' }}>{leden}</p>
+
+          <p className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: 'var(--text-secondary)' }}>{project.beschrijving}</p>
+
+          {(project.githubLink || project.demoLink) && (
+            <div className="flex gap-3 mt-6 pt-5" style={{ borderTop: '1px solid var(--border)' }}>
+              {project.githubLink && (
+                <a href={project.githubLink} target="_blank" rel="noopener noreferrer" className="btn-secondary py-2 px-4">
+                  GitHub
+                </a>
+              )}
+              {project.demoLink && (
+                <a href={project.demoLink} target="_blank" rel="noopener noreferrer" className="btn-primary py-2 px-4">
+                  Live demo
+                </a>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Pagination({ pagina, totaalPaginas, setPagina }: { pagina: number; totaalPaginas: number; setPagina: (p: number) => void }) {
+  if (totaalPaginas <= 1) return null;
+  return (
+    <div className="flex items-center justify-center gap-2 mt-8">
+      <button
+        onClick={() => setPagina(pagina - 1)}
+        disabled={pagina === 1}
+        className="px-3 py-1.5 rounded-lg text-sm font-medium transition-all"
+        style={pagina === 1
+          ? { background: 'var(--bg-card)', color: 'var(--text-muted)', opacity: 0.5, border: '1px solid var(--border)' }
+          : { background: 'var(--bg-card)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }
+        }
+      >
+        Vorige
+      </button>
+      {Array.from({ length: totaalPaginas }, (_, i) => i + 1).map(p => (
+        <button
+          key={p}
+          onClick={() => setPagina(p)}
+          className="w-8 h-8 rounded-lg text-sm font-medium transition-all"
+          style={p === pagina
+            ? { background: 'var(--gradient)', color: '#fff' }
+            : { background: 'var(--bg-card)', color: 'var(--text-muted)', border: '1px solid var(--border)' }
+          }
+        >
+          {p}
+        </button>
+      ))}
+      <button
+        onClick={() => setPagina(pagina + 1)}
+        disabled={pagina === totaalPaginas}
+        className="px-3 py-1.5 rounded-lg text-sm font-medium transition-all"
+        style={pagina === totaalPaginas
+          ? { background: 'var(--bg-card)', color: 'var(--text-muted)', opacity: 0.5, border: '1px solid var(--border)' }
+          : { background: 'var(--bg-card)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }
+        }
+      >
+        Volgende
+      </button>
+    </div>
+  );
+}
 
 export default function PortfolioPage() {
   const [projecten, setProjecten] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [actieveFilter, setActieveFilter] = useState('alles');
+  const [zoekterm, setZoekterm] = useState('');
+  const [geselecteerd, setGeselecteerd] = useState<Project | null>(null);
+  const [pagina, setPagina] = useState(1);
 
   useEffect(() => {
     async function laadProjecten() {
@@ -54,161 +191,152 @@ export default function PortfolioPage() {
     laadProjecten();
   }, []);
 
-  const gefilterd = actieveFilter === 'alles'
-    ? projecten
-    : projecten.filter(p => (p.type ?? 'overig') === actieveFilter);
+  // Reset to page 1 when filter/search changes
+  useEffect(() => { setPagina(1); }, [actieveFilter, zoekterm]);
+
+  const gefilterd = projecten.filter(p => {
+    if (actieveFilter !== 'alles' && (p.type ?? 'overig') !== actieveFilter) return false;
+    if (!zoekterm.trim()) return true;
+    const term = zoekterm.toLowerCase();
+    return p.titel.toLowerCase().includes(term)
+      || p.beschrijving.toLowerCase().includes(term)
+      || p.studentNaam.toLowerCase().includes(term)
+      || (p.leden ?? []).some(l => l.naam.toLowerCase().includes(term));
+  });
+
+  const totaalPaginas = Math.max(1, Math.ceil(gefilterd.length / PER_PAGE));
+  const paginaProjecten = gefilterd.slice((pagina - 1) * PER_PAGE, pagina * PER_PAGE);
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg)' }}>
-        <div className="badge-accent">
-          <span className="w-1.5 h-1.5 rounded-full animate-pulse-dot" style={{ background: 'var(--accent)' }} />
-          Laden...
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="flex items-center gap-3">
+          <div className="w-6 h-6 rounded-full border-2 animate-spin" style={{ borderColor: 'var(--border)', borderTopColor: 'var(--accent-1)' }} />
+          <span className="text-sm" style={{ color: 'var(--text-muted)' }}>Portfolio laden...</span>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen py-12 px-4" style={{ background: 'var(--bg)' }}>
+    <div className="min-h-screen flex flex-col">
+      {geselecteerd && <ProjectModal project={geselecteerd} onClose={() => setGeselecteerd(null)} />}
 
-      {/* Header */}
-      <div className="max-w-5xl mx-auto text-center mb-10">
-        <div className="badge-accent justify-center mb-5">
-          <span className="w-1.5 h-1.5 rounded-full animate-pulse-dot" style={{ background: 'var(--accent)' }} />
-          Studentenprojecten
-        </div>
-        <h1 className="animate-fade-up text-4xl font-bold" style={{ color: 'var(--text-dark)' }}>
-          Studentenportfolio
-        </h1>
-        <p className="animate-fade-up animate-fade-up-2 mt-3 text-lg" style={{ color: 'var(--text-muted)' }}>
-          Bekijk de projecten die onze studenten hebben gemaakt
-        </p>
-      </div>
-
-      {/* Filter buttons */}
-      <div className="max-w-5xl mx-auto mb-8">
-        <div className="flex gap-2 flex-wrap justify-center">
-          {filterOpties.map(opt => (
-            <button
-              key={opt.value}
-              onClick={() => setActieveFilter(opt.value)}
-              className="px-4 py-2 rounded-lg text-sm font-medium transition-all"
-              style={
-                actieveFilter === opt.value
-                  ? { background: 'var(--accent)', color: '#fff' }
-                  : { background: 'var(--bg-white)', color: 'var(--text-muted)', border: '1px solid var(--border)' }
-              }
-            >
-              {opt.label}
-              {opt.value !== 'alles' && (
-                <span className="ml-1.5 text-xs opacity-70">
-                  ({projecten.filter(p => (p.type ?? 'overig') === opt.value).length})
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="max-w-5xl mx-auto">
-        {gefilterd.length === 0 && (
-          <div
-            className="text-center py-16 rounded-2xl"
-            style={{ background: 'var(--bg-white)', border: '1px dashed var(--border)' }}
-          >
-            <div className="w-14 h-14 rounded-xl flex items-center justify-center mx-auto mb-4 text-2xl"
-              style={{ background: 'var(--accent-glow)' }}>
-              📁
-            </div>
-            <p style={{ color: 'var(--text-muted)' }}>
-              {actieveFilter === 'alles'
-                ? 'Er zijn nog geen projecten gepubliceerd.'
-                : `Geen ${typeLabels[actieveFilter] ?? actieveFilter} projecten gevonden.`}
+      <div className="flex-1">
+        {/* Header */}
+        <div className="pt-12 pb-8 px-5 relative">
+          <div className="hero-glow" style={{ width: '400px', height: '400px', background: 'rgba(99,102,241,0.06)', top: '-100px', left: '50%', transform: 'translateX(-50%)' }} />
+          <div className="max-w-6xl mx-auto text-center relative">
+            <span className="badge badge-accent mb-4 inline-flex">Studentenprojecten</span>
+            <h1 className="animate-fade-up text-3xl lg:text-4xl font-bold tracking-tight">
+              <span className="gradient-text">Studentenportfolio</span>
+            </h1>
+            <p className="animate-fade-up animate-fade-up-2 mt-2 text-base" style={{ color: 'var(--text-secondary)' }}>
+              Bekijk de projecten die onze studenten hebben gemaakt
             </p>
-          </div>
-        )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {gefilterd.map((project, i) => (
-            <div
-              key={project.id}
-              className={`animate-fade-up animate-fade-up-${Math.min(i + 1, 5)} card-hover rounded-xl overflow-hidden`}
-              style={{ background: 'var(--bg-white)', border: '1px solid var(--border)' }}
-            >
-              {project.afbeeldingUrl ? (
-                project.mediaType === 'video' ? (
-                  <video
-                    src={project.afbeeldingUrl}
-                    controls
-                    className="w-full h-48 object-contain bg-black"
-                  />
-                ) : (
-                  <img src={project.afbeeldingUrl} alt={project.titel} className="w-full h-48 object-cover" />
-                )
-              ) : (
-                <div className="w-full h-48 flex items-center justify-center text-4xl"
-                  style={{ background: 'var(--accent-glow)' }}>
-                  {project.type === 'game' ? '🎮' : project.type === 'hardware' ? '🔧' : '🌐'}
-                </div>
-              )}
-              <div className="p-5">
-                <div className="flex items-center gap-2 mb-1">
-                  <h2 className="text-lg font-semibold" style={{ color: 'var(--text-dark)' }}>{project.titel}</h2>
-                  {project.type && (
-                    <span
-                      className="text-xs px-2 py-0.5 rounded-full font-medium shrink-0"
-                      style={{ background: 'var(--accent-glow)', color: 'var(--accent)' }}
-                    >
-                      {typeLabels[project.type] ?? project.type}
-                    </span>
-                  )}
-                </div>
-                <p className="text-xs mt-1 font-mono" style={{ color: 'var(--accent)' }}>
-                  {(project.leden && project.leden.length > 0)
-                    ? project.leden.map(l => l.naam).join(', ')
-                    : project.studentNaam}
-                </p>
-                <p className="mt-3 text-sm leading-relaxed line-clamp-3" style={{ color: 'var(--text-muted)' }}>
-                  {project.beschrijving}
-                </p>
-                <div className="flex gap-3 mt-4">
-                  {project.githubLink && (
-                    <a href={project.githubLink} target="_blank" rel="noopener noreferrer"
-                      className="text-xs font-semibold px-3 py-1.5 rounded-lg hover:opacity-80"
-                      style={{ background: 'var(--surface-dark)', color: 'var(--text-on-dark)' }}>
-                      GitHub
-                    </a>
-                  )}
-                  {project.demoLink && (
-                    <a href={project.demoLink} target="_blank" rel="noopener noreferrer"
-                      className="text-xs font-semibold px-3 py-1.5 rounded-lg hover:opacity-80"
-                      style={{ background: 'var(--accent)', color: '#fff' }}>
-                      Live demo
-                    </a>
-                  )}
-                </div>
-              </div>
+            {/* Search */}
+            <div className="animate-fade-up animate-fade-up-3 mt-6 max-w-md mx-auto relative">
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{ color: 'var(--text-muted)' }}>
+                <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+              <input
+                type="text"
+                placeholder="Zoek op titel, student of beschrijving..."
+                value={zoekterm}
+                onChange={e => setZoekterm(e.target.value)}
+                className="input-themed"
+                style={{ paddingLeft: '2.5rem' }}
+              />
             </div>
-          ))}
+
+            {/* Filters */}
+            <div className="mt-4 flex gap-1.5 flex-wrap justify-center">
+              {filterOpties.map(opt => (
+                <button key={opt.value} onClick={() => setActieveFilter(opt.value)}
+                  className="px-3.5 py-1.5 rounded-lg text-sm font-medium transition-all"
+                  style={actieveFilter === opt.value
+                    ? { background: 'var(--gradient)', color: '#fff' }
+                    : { background: 'var(--bg-card)', color: 'var(--text-muted)', border: '1px solid var(--border)' }
+                  }>
+                  {opt.label}
+                  {opt.value !== 'alles' && <span className="ml-1 opacity-60">{projecten.filter(p => (p.type ?? 'overig') === opt.value).length}</span>}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
-        {/* CTA */}
-        <div
-          className="mt-16 rounded-2xl p-10 text-center"
-          style={{ background: 'var(--surface-dark)', border: '1px solid var(--surface-dark-border)' }}
-        >
-          <div className="badge-accent justify-center mb-4">
-            <span className="w-1.5 h-1.5 rounded-full animate-pulse-dot" style={{ background: 'var(--accent)' }} />
-            Voor bedrijven
+        {/* Grid */}
+        <div className="max-w-6xl mx-auto px-5 py-10">
+          {gefilterd.length === 0 ? (
+            <div className="card p-14 text-center">
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3" style={{ background: 'var(--gradient-subtle)' }}>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ color: 'var(--accent-3)' }}>
+                  <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" /><polyline points="13 2 13 9 20 9" />
+                </svg>
+              </div>
+              <p className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>
+                {zoekterm.trim() ? 'Geen projecten gevonden voor je zoekopdracht.' : actieveFilter === 'alles' ? 'Er zijn nog geen projecten gepubliceerd.' : `Geen ${typeLabels[actieveFilter]} projecten gevonden.`}
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                {paginaProjecten.map((project, i) => (
+                  <div
+                    key={project.id}
+                    onClick={() => setGeselecteerd(project)}
+                    className={`animate-fade-up animate-fade-up-${Math.min(i + 1, 5)} card card-lift overflow-hidden cursor-pointer`}
+                  >
+                    {project.afbeeldingUrl ? (
+                      project.mediaType === 'video' ? (
+                        <video src={project.afbeeldingUrl} controls className="w-full h-48 object-contain bg-black" onClick={e => e.stopPropagation()} />
+                      ) : (
+                        <div className="relative w-full h-48">
+                          <Image src={project.afbeeldingUrl} alt={project.titel} fill className="object-cover" unoptimized />
+                        </div>
+                      )
+                    ) : (
+                      <div className="w-full h-48 flex items-center justify-center text-3xl" style={{ background: 'var(--gradient-subtle)' }}>
+                        {typeIcons[project.type ?? 'overig']}
+                      </div>
+                    )}
+                    <div className="p-5">
+                      <div className="flex items-start gap-2 mb-1">
+                        <h2 className="text-[0.9375rem] font-semibold flex-1" style={{ color: 'var(--text-primary)' }}>{project.titel}</h2>
+                        {project.type && <span className="badge badge-accent text-[0.625rem] shrink-0">{typeLabels[project.type]}</span>}
+                      </div>
+                      <p className="text-xs font-medium" style={{ color: 'var(--accent-3)' }}>
+                        {(project.leden && project.leden.length > 0) ? project.leden.map(l => l.naam).join(', ') : project.studentNaam}
+                      </p>
+                      <p className="mt-2.5 text-sm leading-relaxed line-clamp-3" style={{ color: 'var(--text-muted)' }}>{project.beschrijving}</p>
+                      {(project.githubLink || project.demoLink) && (
+                        <div className="flex gap-2 mt-4 pt-3" style={{ borderTop: '1px solid var(--border)' }}>
+                          {project.githubLink && <a href={project.githubLink} target="_blank" rel="noopener noreferrer" className="btn-secondary text-xs py-1.5 px-3" onClick={e => e.stopPropagation()}>GitHub</a>}
+                          {project.demoLink && <a href={project.demoLink} target="_blank" rel="noopener noreferrer" className="btn-primary text-xs py-1.5 px-3" onClick={e => e.stopPropagation()}>Live demo</a>}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <Pagination pagina={pagina} totaalPaginas={totaalPaginas} setPagina={setPagina} />
+            </>
+          )}
+
+          {/* CTA */}
+          <div className="mt-14 rounded-2xl p-[1px]" style={{ background: 'linear-gradient(135deg, var(--accent-1), var(--accent-2), transparent)' }}>
+            <div className="rounded-2xl p-10 text-center" style={{ background: 'var(--bg-secondary)' }}>
+              <span className="badge badge-accent mb-4 inline-flex">Voor bedrijven</span>
+              <h2 className="text-2xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>Bent u een bedrijf?</h2>
+              <p className="text-sm mb-5" style={{ color: 'var(--text-muted)' }}>Vraag een project aan en laat onze studenten aan de slag gaan.</p>
+              <a href="/aanvraag" className="btn-primary">Project aanvragen</a>
+            </div>
           </div>
-          <h2 className="text-2xl font-bold mb-3" style={{ color: 'var(--text-on-dark)' }}>Bent u een bedrijf?</h2>
-          <p className="mb-6" style={{ color: 'var(--text-on-dark-muted)' }}>
-            Vraag een project aan en laat onze studenten aan de slag gaan.
-          </p>
-          <a href="/aanvraag" className="btn-accent">Project aanvragen</a>
         </div>
       </div>
+      <Footer />
     </div>
   );
 }
