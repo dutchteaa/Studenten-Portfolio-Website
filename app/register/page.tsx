@@ -13,11 +13,11 @@ export default function RegisterPage() {
 
   async function handleRegister() {
     setError('');
-    if (!email.toLowerCase().endsWith('@novacollege.nl')) {
-      setError('Alleen @novacollege.nl e-mailadressen zijn toegestaan.');
+    if (!name.trim()) {
+      setError('Vul je volledige naam in.');
       return;
     }
-    setLoading(true);
+setLoading(true);
     try {
       await register(email, password, name);
       setSuccess(true);
@@ -66,7 +66,6 @@ export default function RegisterPage() {
             <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>E-mailadres</label>
               <input type="email" placeholder="naam@novacollege.nl" value={email} onChange={e => setEmail(e.target.value)} className="input-themed" />
-              <p className="text-[0.6875rem] mt-1" style={{ color: 'var(--text-muted)' }}>Alleen @novacollege.nl adressen</p>
             </div>
             <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>Wachtwoord</label>

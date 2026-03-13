@@ -28,13 +28,13 @@ All data access is **client-side only** — components query Firestore directly 
 ### Firestore collections
 
 - **`users`** — `{ uid, email, name, role ('student'|'admin'), createdAt }`
-- **`projects`** — Student portfolio projects with `titel`, `beschrijving`, `type ('website'|'game'|'hardware'|'overig')`, `afbeeldingUrl`, links, `leden`
-- **`aanvragen`** — Company project requests with `status ('nieuw'|'goedgekeurd')`, `claims` array
+- **`projecten`** — Student portfolio projects with `titel`, `beschrijving`, `type ('website'|'game'|'hardware'|'overig')`, `afbeeldingUrl`, links, `leden`
+- **`aanvragen`** — Company project requests with `status ('nieuw'|'goedgekeurd'|'afgewezen')`, `claims` array
 
 ### Page access
 
 - Public: `/`, `/login`, `/register`, `/portfolio`, `/aanvraag`
-- Students: `/dashboard`, `/opdrachten`
+- Logged-in users: `/dashboard`, `/opdrachten`
 - Admin only: `/admin`
 
 ### Three user types
@@ -42,6 +42,23 @@ All data access is **client-side only** — components query Firestore directly 
 1. **Students** — register, manage portfolio projects, claim company requests
 2. **Companies** — submit project requests (no auth required)
 3. **Admins** — approve/manage requests and projects
+
+## UI / Design
+
+- **Dark theme** — near-black background (`#09090b`) with indigo-to-violet gradient accent (`#6366f1` -> `#8b5cf6`)
+- CSS variables defined in `app/globals.css` under `:root`
+- Custom component classes: `.card`, `.btn-primary`, `.btn-secondary`, `.btn-ghost`, `.badge-*`, `.input-themed`, `.glass-nav`
+- `.gradient-text` for gradient headings, `.hero-glow` for animated glow orbs
+- Font: Inter (sans) + JetBrains Mono (mono), loaded via Google Fonts
+- Animations: `.animate-fade-up`, `.animate-scale-in`, `.animate-float`, `.animate-slide-down`
+
+## Features
+
+- `/portfolio` and `/opdrachten` have client-side search (filters on title, description, student name, technologies)
+- `/portfolio` also has type filter buttons (website/game/hardware/overig)
+- `/opdrachten` requires login — redirects to `/login` if not authenticated
+- Students can claim/unclaim opdrachten
+- Dashboard supports team members (search by email, add to project)
 
 ## Environment Variables
 

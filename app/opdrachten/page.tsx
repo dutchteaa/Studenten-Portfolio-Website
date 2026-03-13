@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { collection, getDocs, query, where, updateDoc, doc, arrayUnion } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/context/AuthContext';
@@ -13,12 +14,18 @@ interface Aanvraag {
 }
 
 export default function OpdrachtenPage() {
-  const { user, naam, role } = useAuth();
+  const { user, naam, role, loading: authLoading } = useAuth();
+  const router = useRouter();
   const [aanvragen, setAanvragen] = useState<Aanvraag[]>([]);
   const [loading, setLoading] = useState(true);
   const [claimingId, setClaimingId] = useState<string | null>(null);
   const [unclaimingId, setUnclaimingId] = useState<string | null>(null);
   const [openClaims, setOpenClaims] = useState<string | null>(null);
+  const [zoekterm, setZoekterm] = useState('');
+
+  useEffect(() => {
+    if (!authLoading && !user) router.push('/login');
+  }, [user, authLoading, router]);
 
   async function laadAanvragen() {
     const q = query(collection(db, 'aanvragen'), where('status', '==', 'goedgekeurd'));
@@ -27,7 +34,7 @@ export default function OpdrachtenPage() {
     setLoading(false);
   }
 
-  useEffect(() => { laadAanvragen(); }, []);
+  useEffect(() => { if (user) laadAanvragen(); }, [user]);
 
   async function claimOpdracht(id: string) {
     if (!user) return; setClaimingId(id);
@@ -43,7 +50,16 @@ export default function OpdrachtenPage() {
 
   function heeftGeclaimd(a: Aanvraag) { return (a.claims ?? []).some(c => c.uid === user?.uid); }
 
-  if (loading) {
+  const gefilterd = aanvragen.filter(a => {
+    if (!zoekterm.trim()) return true;
+    const term = zoekterm.toLowerCase();
+    return a.bedrijfsnaam.toLowerCase().includes(term)
+      || a.projectomschrijving.toLowerCase().includes(term)
+      || (a.technologieen ?? '').toLowerCase().includes(term)
+      || a.contactpersoon.toLowerCase().includes(term);
+  });
+
+  if (authLoading || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="flex items-center gap-3">
@@ -53,6 +69,8 @@ export default function OpdrachtenPage() {
       </div>
     );
   }
+
+  if (!user) return null;
 
   return (
     <div className="min-h-screen">
@@ -67,30 +85,36 @@ export default function OpdrachtenPage() {
           <p className="animate-fade-up animate-fade-up-2 mt-2 text-base" style={{ color: 'var(--text-secondary)' }}>
             Goedgekeurde projecten van bedrijven die je kunt claimen
           </p>
+
+          {/* Search */}
+          <div className="animate-fade-up animate-fade-up-3 mt-6 max-w-md mx-auto relative">
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{ color: 'var(--text-muted)' }}>
+              <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <input
+              type="text"
+              placeholder="Zoek op bedrijf, omschrijving of technologie..."
+              value={zoekterm}
+              onChange={e => setZoekterm(e.target.value)}
+              className="input-themed pl-10"
+            />
+          </div>
         </div>
       </div>
 
       <div className="max-w-4xl mx-auto px-5 py-8">
-        {!user && (
-          <div className="card mb-6 p-4 flex items-center gap-3" style={{ borderColor: 'rgba(245,158,11,0.25)' }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
-            <div>
-              <p className="text-sm font-medium" style={{ color: '#fbbf24' }}>Log in om opdrachten te claimen</p>
-              <a href="/login" className="text-xs hover:underline" style={{ color: 'var(--text-muted)' }}>Naar inloggen &rarr;</a>
-            </div>
-          </div>
-        )}
-
-        {aanvragen.length === 0 ? (
+        {gefilterd.length === 0 ? (
           <div className="animate-fade-up card p-14 text-center">
             <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3" style={{ background: 'var(--gradient-subtle)' }}>
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ color: 'var(--accent-3)' }}><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M9 12h6M12 9v6" /></svg>
             </div>
-            <p className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>Er zijn momenteel geen goedgekeurde opdrachten.</p>
+            <p className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>
+              {zoekterm.trim() ? 'Geen opdrachten gevonden voor je zoekopdracht.' : 'Er zijn momenteel geen goedgekeurde opdrachten.'}
+            </p>
           </div>
         ) : (
           <div className="space-y-4">
-            {aanvragen.map((a, i) => {
+            {gefilterd.map((a, i) => {
               const claims = a.claims ?? [];
               const alGeclaimd = heeftGeclaimd(a);
               const isOpen = openClaims === a.id;
@@ -124,7 +148,7 @@ export default function OpdrachtenPage() {
                           <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{a.contactpersoon}</p>
                           <a href={`mailto:${a.email}`} className="text-xs block mt-0.5 hover:underline" style={{ color: 'var(--accent-3)' }}>{a.email}</a>
                         </div>
-                        {user && (alGeclaimd ? (
+                        {alGeclaimd ? (
                           <div className="space-y-1.5">
                             <div className="badge badge-success w-full justify-center py-2.5 text-xs font-semibold">Geclaimed</div>
                             <button onClick={() => unclaimOpdracht(a)} disabled={unclaimingId === a.id} className="text-xs font-medium w-full py-2.5 rounded-lg text-center" style={{ background: 'rgba(239,68,68,0.12)', color: '#f87171' }}>
@@ -135,8 +159,8 @@ export default function OpdrachtenPage() {
                           <button onClick={() => claimOpdracht(a.id)} disabled={claimingId === a.id} className="btn-primary w-full text-sm py-2.5">
                             {claimingId === a.id ? 'Bezig...' : 'Claim opdracht'}
                           </button>
-                        ))}
-                        {(user || role === 'admin') && claims.length > 0 && (
+                        )}
+                        {(role === 'admin' || claims.length > 0) && (
                           <button onClick={() => setOpenClaims(isOpen ? null : a.id)} className="btn-ghost text-xs justify-center">
                             {isOpen ? 'Verberg' : `Bekijk claims (${claims.length})`}
                           </button>

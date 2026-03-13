@@ -37,6 +37,7 @@ export default function PortfolioPage() {
   const [projecten, setProjecten] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [actieveFilter, setActieveFilter] = useState('alles');
+  const [zoekterm, setZoekterm] = useState('');
 
   useEffect(() => {
     async function laadProjecten() {
@@ -47,7 +48,15 @@ export default function PortfolioPage() {
     laadProjecten();
   }, []);
 
-  const gefilterd = actieveFilter === 'alles' ? projecten : projecten.filter(p => (p.type ?? 'overig') === actieveFilter);
+  const gefilterd = projecten.filter(p => {
+    if (actieveFilter !== 'alles' && (p.type ?? 'overig') !== actieveFilter) return false;
+    if (!zoekterm.trim()) return true;
+    const term = zoekterm.toLowerCase();
+    return p.titel.toLowerCase().includes(term)
+      || p.beschrijving.toLowerCase().includes(term)
+      || p.studentNaam.toLowerCase().includes(term)
+      || (p.leden ?? []).some(l => l.naam.toLowerCase().includes(term));
+  });
 
   if (loading) {
     return (
@@ -75,8 +84,22 @@ export default function PortfolioPage() {
               Bekijk de projecten die onze studenten hebben gemaakt
             </p>
 
+            {/* Search */}
+            <div className="animate-fade-up animate-fade-up-3 mt-6 max-w-md mx-auto relative">
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{ color: 'var(--text-muted)' }}>
+                <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+              <input
+                type="text"
+                placeholder="Zoek op titel, student of beschrijving..."
+                value={zoekterm}
+                onChange={e => setZoekterm(e.target.value)}
+                className="input-themed pl-10"
+              />
+            </div>
+
             {/* Filters */}
-            <div className="mt-6 flex gap-1.5 flex-wrap justify-center">
+            <div className="mt-4 flex gap-1.5 flex-wrap justify-center">
               {filterOpties.map(opt => (
                 <button key={opt.value} onClick={() => setActieveFilter(opt.value)}
                   className="px-3.5 py-1.5 rounded-lg text-sm font-medium transition-all"
@@ -102,7 +125,7 @@ export default function PortfolioPage() {
                 </svg>
               </div>
               <p className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>
-                {actieveFilter === 'alles' ? 'Er zijn nog geen projecten gepubliceerd.' : `Geen ${typeLabels[actieveFilter]} projecten gevonden.`}
+                {zoekterm.trim() ? 'Geen projecten gevonden voor je zoekopdracht.' : actieveFilter === 'alles' ? 'Er zijn nog geen projecten gepubliceerd.' : `Geen ${typeLabels[actieveFilter]} projecten gevonden.`}
               </p>
             </div>
           ) : (
