@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, query, where, getCountFromServer } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import Footer from '@/components/Footer';
 
@@ -26,10 +26,11 @@ export default function HomePage() {
 
   useEffect(() => {
     async function laadStats() {
-      const snapshot = await getDocs(collection(db, 'projecten'));
-      const projecten = snapshot.docs.map(d => d.data());
-      const uniqueStudenten = new Set(projecten.map(p => p.studentId)).size;
-      setStats({ studenten: uniqueStudenten, projecten: projecten.length });
+      const [projectenCount, studentenCount] = await Promise.all([
+        getCountFromServer(collection(db, 'projecten')),
+        getCountFromServer(query(collection(db, 'users'), where('role', '==', 'student'), where('approved', '==', true))),
+      ]);
+      setStats({ studenten: studentenCount.data().count, projecten: projectenCount.data().count });
     }
     laadStats();
   }, []);

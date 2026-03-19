@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { collection, getDocs, updateDoc, deleteDoc, doc, query, where } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { db, auth } from '@/lib/firebase';
 
 type ProjectType = 'website' | 'game' | 'hardware' | 'overig';
 interface Claim { uid: string; naam: string; email: string; claimedAt: string; }
@@ -52,8 +52,20 @@ export default function AdminPage() {
     await updateDoc(doc(db, 'users', id), { approved: true });
     laadGebruikers();
   }
-  async function wijsGebruikerAf(id: string) {
-    await deleteDoc(doc(db, 'users', id));
+
+  async function verwijderGebruiker(uid: string) {
+    const token = await auth.currentUser?.getIdToken();
+    if (!token) return;
+    const res = await fetch('/api/admin/delete-user', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ uid }),
+    });
+    if (!res.ok) {
+      const data = await res.json();
+      alert(data.error ?? 'Verwijderen mislukt');
+      return;
+    }
     laadGebruikers();
   }
 
@@ -277,7 +289,7 @@ export default function AdminPage() {
                         </div>
                         <div className="flex gap-1.5 shrink-0">
                           <button onClick={() => keurGebruikerGoed(g.id)} className="text-xs px-3 py-1.5 rounded-lg font-medium" style={{ background: 'rgba(34,197,94,0.12)', color: '#4ade80' }}>Goedkeuren</button>
-                          <button onClick={() => wijsGebruikerAf(g.id)} className="text-xs px-3 py-1.5 rounded-lg font-medium" style={{ background: 'rgba(239,68,68,0.12)', color: '#f87171' }}>Afwijzen</button>
+                          <button onClick={() => verwijderGebruiker(g.uid)} className="text-xs px-3 py-1.5 rounded-lg font-medium" style={{ background: 'rgba(239,68,68,0.12)', color: '#f87171' }}>Afwijzen</button>
                         </div>
                       </div>
                     </div>
@@ -306,6 +318,7 @@ export default function AdminPage() {
                           <p className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>{g.email}</p>
                         </div>
                         <span className="badge badge-success text-[0.625rem] shrink-0">Actief</span>
+                        <button onClick={() => verwijderGebruiker(g.uid)} className="text-xs font-medium px-2.5 py-1 rounded-lg shrink-0" style={{ background: 'rgba(239,68,68,0.12)', color: '#f87171' }}>Verwijderen</button>
                       </div>
                     ))}
                   </div>
