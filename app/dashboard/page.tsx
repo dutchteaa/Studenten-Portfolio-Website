@@ -61,7 +61,8 @@ export default function DashboardPage() {
   async function zoekStudent() {
     if (!ledenZoek.trim()) return;
     setLedenZoekLoading(true); setLedenZoekResultaat(null);
-    const zoekterm = ledenZoek.trim();
+    const raw = ledenZoek.trim();
+    const zoekterm = raw.charAt(0).toUpperCase() + raw.slice(1);
     const q = query(
       collection(db, 'users'),
       where('name', '>=', zoekterm),
