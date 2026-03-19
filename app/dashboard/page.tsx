@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { collection, addDoc, getDocs, query, where, deleteDoc, doc, updateDoc } from 'firebase/firestore';
+import { collection, addDoc, getDocs, query, where, deleteDoc, doc, updateDoc, limit } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import Image from 'next/image';
 
@@ -40,9 +40,13 @@ export default function DashboardPage() {
 
   const laadProjecten = useCallback(async () => {
     if (!user) return;
-    const snapshot = await getDocs(collection(db, 'projecten'));
-    const alle = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Project));
-    setProjecten(alle.filter(p => p.studentId === user.uid || (p.leden ?? []).some((l: Lid) => l.uid === user.uid)));
+    const eigenaarQuery = query(collection(db, 'projecten'), where('studentId', '==', user.uid));
+    const ledenQuery = query(collection(db, 'projecten'), where('ledenIds', 'array-contains', user.uid));
+    const [eigenaarSnap, ledenSnap] = await Promise.all([getDocs(eigenaarQuery), getDocs(ledenQuery)]);
+    const projectMap = new Map<string, Project>();
+    eigenaarSnap.docs.forEach(d => projectMap.set(d.id, { id: d.id, ...d.data() } as Project));
+    ledenSnap.docs.forEach(d => { if (!projectMap.has(d.id)) projectMap.set(d.id, { id: d.id, ...d.data() } as Project); });
+    setProjecten(Array.from(projectMap.values()));
   }, [user]);
 
   useEffect(() => { if (user) laadProjecten(); }, [user, laadProjecten]);
@@ -57,11 +61,17 @@ export default function DashboardPage() {
   async function zoekStudent() {
     if (!ledenZoek.trim()) return;
     setLedenZoekLoading(true); setLedenZoekResultaat(null);
-    const snap = await getDocs(collection(db, 'users'));
-    const zoekterm = ledenZoek.trim().toLowerCase();
+    const zoekterm = ledenZoek.trim();
+    const q = query(
+      collection(db, 'users'),
+      where('name', '>=', zoekterm),
+      where('name', '<=', zoekterm + '\uf8ff'),
+      limit(10)
+    );
+    const snap = await getDocs(q);
     const resultaten = snap.docs
-      .map(d => d.data() as { uid: string; name: string; email: string })
-      .filter(d => d.name?.toLowerCase().includes(zoekterm) && d.uid !== user?.uid && !formulierLeden.some(l => l.uid === d.uid));
+      .map(d => d.data() as { uid: string; name: string; email: string; role?: string })
+      .filter(d => d.uid !== user?.uid && !formulierLeden.some(l => l.uid === d.uid));
     if (resultaten.length === 0) { setLedenZoekResultaat('niet-gevonden'); } else {
       setLedenZoekResultaat(resultaten.map(d => ({ uid: d.uid, naam: d.name, email: d.email })));
     }
@@ -79,7 +89,8 @@ export default function DashboardPage() {
       const eigenaarNaam = naam ?? user.email ?? '';
       const eigenaarLid: Lid = { uid: eigenaarId, naam: eigenaarNaam, email: user.email ?? '' };
       const alleLeden = [eigenaarLid, ...formulierLeden.filter(l => l.uid !== eigenaarId)];
-      const data = { ...form, leden: alleLeden, studentId: eigenaarId, studentNaam: eigenaarNaam };
+      const ledenIds = alleLeden.map(l => l.uid);
+      const data = { ...form, leden: alleLeden, ledenIds, studentId: eigenaarId, studentNaam: eigenaarNaam };
       if (bewerkId) { await updateDoc(doc(db, 'projecten', bewerkId), data); } else { await addDoc(collection(db, 'projecten'), { ...data, gepubliceerdOp: new Date().toISOString() }); }
       sluitFormulier(); laadProjecten();
     } catch (err) { console.error('Opslaan mislukt:', err); setOpslaanFout('Opslaan mislukt. Controleer je internetverbinding.'); setOpslaanBezig(false); }
