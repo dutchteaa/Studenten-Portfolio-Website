@@ -3,14 +3,14 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { collection, getDocs, updateDoc, deleteDoc, doc, query, where } from 'firebase/firestore';
+import { collection, getDocs, updateDoc, deleteDoc, doc, query, where, getDoc } from 'firebase/firestore';
 import { db, auth } from '@/lib/firebase';
 
 type ProjectType = 'website' | 'game' | 'hardware' | 'overig';
 interface Claim { uid: string; naam: string; email: string; claimedAt: string; }
-interface Aanvraag { id: string; bedrijfsnaam: string; contactpersoon: string; email: string; projectomschrijving: string; technologieen?: string; deadline?: string; tijdsduur?: string; status: string; claims?: Claim[]; }
-interface Project { id: string; titel: string; beschrijving: string; studentNaam: string; githubLink?: string; demoLink?: string; type?: ProjectType; }
-interface UserAccount { id: string; uid: string; email: string; name: string; role: string; approved: boolean; createdAt: string; }
+interface Aanvraag { id: string; bedrijfsnaam: string; contactpersoon: string; email: string; projectomschrijving: string; technologieen?: string; deadline?: string; tijdsduur?: string; status: string; claims?: Claim[]; imageUrl?: string; }
+interface Project { id: string; titel: string; beschrijving: string; studentNaam: string; githubLink?: string; demoLink?: string; type?: ProjectType; afbeeldingUrl?: string; }
+interface UserAccount { id: string; uid: string; email: string; name: string; role: string; approved: boolean; createdAt: string; fullName?: string; }
 
 const typeLabels: Record<string, string> = { website: 'Website', game: 'Game', hardware: 'Hardware', overig: 'Overig' };
 
@@ -23,7 +23,7 @@ export default function AdminPage() {
   const [actieveTab, setActieveTab] = useState<'aanvragen' | 'projecten' | 'gebruikers'>('aanvragen');
   const [openClaims, setOpenClaims] = useState<string | null>(null);
   const [bewerkProject, setBewerkProject] = useState<Project | null>(null);
-  const [bewerkForm, setBewerkForm] = useState({ titel: '', beschrijving: '', githubLink: '', demoLink: '', type: 'website' as ProjectType });
+  const [bewerkForm, setBewerkForm] = useState({ titel: '', beschrijving: '', githubLink: '', demoLink: '', type: 'website' as ProjectType, afbeeldingUrl: '' });
   const [opslaanFout, setOpslaanFout] = useState('');
 
   useEffect(() => { if (!loading && role !== 'admin') router.push('/login'); }, [role, loading, router]);
@@ -41,7 +41,7 @@ export default function AdminPage() {
   async function aanvraagVerwijderen(id: string) { await deleteDoc(doc(db, 'aanvragen', id)); laadAanvragen(); }
   function isDeadlineVerstreken(d?: string): boolean { if (!d) return false; const date = new Date(d); return !isNaN(date.getTime()) && date < new Date(); }
   async function projectVerwijderen(id: string) { await deleteDoc(doc(db, 'projecten', id)); laadProjecten(); }
-  function openBewerkProject(p: Project) { setBewerkProject(p); setBewerkForm({ titel: p.titel, beschrijving: p.beschrijving, githubLink: p.githubLink ?? '', demoLink: p.demoLink ?? '', type: p.type ?? 'website' }); }
+  function openBewerkProject(p: Project) { setBewerkProject(p); setBewerkForm({ titel: p.titel, beschrijving: p.beschrijving, githubLink: p.githubLink ?? '', demoLink: p.demoLink ?? '', type: p.type ?? 'website', afbeeldingUrl: p.afbeeldingUrl ?? '' }); }
   async function slaProjectOp() {
     if (!bewerkProject) return; setOpslaanFout('');
     try { await updateDoc(doc(db, 'projecten', bewerkProject.id), bewerkForm); setBewerkProject(null); laadProjecten(); }
@@ -54,20 +54,66 @@ export default function AdminPage() {
   }
 
   async function verwijderGebruiker(uid: string) {
-    const token = await auth.currentUser?.getIdToken();
-    if (!token) return;
-    const res = await fetch('/api/admin/delete-user', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ uid }),
-    });
-    if (!res.ok) {
-      const data = await res.json();
-      alert(data.error ?? 'Verwijderen mislukt');
-      return;
+    try {
+      const currentUser = auth.currentUser;
+      if (!currentUser) return;
+
+      // 🔎 haal admin user document op
+      const adminDocRef = doc(db, 'users', currentUser.uid);
+      const adminSnap = await getDoc(adminDocRef);
+
+      if (!adminSnap.exists()) {
+        alert('Admin user niet gevonden');
+        return;
+      }
+
+      const adminData = adminSnap.data();
+
+      // ✅ check role
+      if (adminData.role !== 'admin') {
+        alert('Geen admin rechten');
+        return;
+      }
+
+      // ✅ nu pas verwijderen
+      await deleteDoc(doc(db, 'users', uid));
+
+      laadGebruikers();
+    } catch (err) {
+      console.error(err);
+      alert('Verwijderen mislukt');
     }
-    laadGebruikers();
   }
+
+  // async function verwijderGebruiker(uid: string) {
+  //   console.log(auth.currentUser);
+  //   const { role } = useAuth();
+    
+  //   if (role !== 'admin') return;
+
+  //   try {
+  //     await deleteDoc(doc(db, 'users', uid));
+  //     laadGebruikers();
+  //   } catch (err) {
+  //     console.error(err);
+  //     alert('Verwijderen mislukt');
+  //   }
+
+  //   // const token = await auth.currentUser?.getIdToken();
+  //   // if (!token) return;
+  //   // const res = await fetch('/api/admin/delete-user', {
+  //   //   method: 'POST',
+  //   //   headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+  //   //   body: JSON.stringify({ uid }),
+  //   // });
+  //   // if (!res.ok) {
+  //   //   const data = await res.json();
+  //   //   console.log(res)
+  //   //   alert(data.error ?? 'Verwijderen mislukt');
+  //   //   return;
+  //   // }
+  //   laadGebruikers();
+  // }
 
   const wachtendGebruikers = gebruikers.filter(g => g.approved === false);
   const goedgekeurdeGebruikers = gebruikers.filter(g => g.approved !== false);
@@ -143,6 +189,19 @@ export default function AdminPage() {
                       </div>
                       <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{a.contactpersoon} &middot; {a.email}</p>
                       <p className="mt-2.5 text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{a.projectomschrijving}</p>
+                      {a.imageUrl && (
+                        <div className="mt-3">
+                          <a href={a.imageUrl} target="_blank" rel="noopener noreferrer">
+                            <img
+                              src={a.imageUrl}
+                              alt="Project afbeelding"
+                              className="w-full max-h-48 object-cover rounded-lg border hover:opacity-90 transition"
+                              style={{ borderColor: 'var(--border)' }}
+                            />
+                          </a>
+                        </div>
+                      )}
+
                       <div className="flex flex-wrap gap-2.5 mt-2.5">
                         {a.technologieen && <span className="badge badge-neutral text-[0.625rem] font-mono">{a.technologieen}</span>}
                         {a.deadline && <span className="text-xs" style={{ color: isDeadlineVerstreken(a.deadline) ? '#f87171' : 'var(--text-muted)' }}>Deadline: {a.deadline}</span>}
@@ -223,6 +282,18 @@ export default function AdminPage() {
                         <div><label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>GitHub</label><input value={bewerkForm.githubLink} onChange={e => setBewerkForm({ ...bewerkForm, githubLink: e.target.value })} className="input-themed" /></div>
                         <div><label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>Demo</label><input value={bewerkForm.demoLink} onChange={e => setBewerkForm({ ...bewerkForm, demoLink: e.target.value })} className="input-themed" /></div>
                       </div>
+                      {p.afbeeldingUrl && (
+                        <div className="mt-3">
+                          <a href={p.afbeeldingUrl} target="_blank" rel="noopener noreferrer">
+                            <img
+                              src={p.afbeeldingUrl}
+                              alt="Project afbeelding"
+                              className="w-full max-h-48 object-cover rounded-lg border hover:opacity-90 transition"
+                              style={{ borderColor: 'var(--border)' }}
+                            />
+                          </a>
+                        </div>
+                      )}
                     </div>
                     {opslaanFout && <div className="badge badge-danger mt-3 w-full justify-center py-2 text-sm">{opslaanFout}</div>}
                     <div className="flex gap-2.5 mt-5 pt-4" style={{ borderTop: '1px solid var(--border)' }}>
@@ -244,6 +315,18 @@ export default function AdminPage() {
                           {p.githubLink && <a href={p.githubLink} target="_blank" rel="noopener noreferrer" className="btn-secondary text-xs py-1 px-2.5">GitHub</a>}
                           {p.demoLink && <a href={p.demoLink} target="_blank" rel="noopener noreferrer" className="btn-primary text-xs py-1 px-2.5">Live demo</a>}
                         </div>
+                        {p.afbeeldingUrl && (
+                        <div className="mt-3">
+                          <a href={p.afbeeldingUrl} target="_blank" rel="noopener noreferrer">
+                            <img
+                              src={p.afbeeldingUrl}
+                              alt="Project afbeelding"
+                              className="w-full max-h-48 object-cover rounded-lg border hover:opacity-90 transition"
+                              style={{ borderColor: 'var(--border)' }}
+                            />
+                          </a>
+                        </div>
+                      )}
                       </div>
                       <div className="flex gap-1.5 shrink-0">
                         <button onClick={() => openBewerkProject(p)} className="text-xs font-medium px-3 py-1.5 rounded-lg" style={{ color: '#818cf8', background: 'rgba(99,102,241,0.12)' }}>Bewerken</button>
@@ -277,10 +360,10 @@ export default function AdminPage() {
                       <div className="p-4 flex items-center justify-between gap-4">
                         <div className="flex items-center gap-3 flex-1 min-w-0">
                           <span className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0" style={{ background: 'var(--gradient)' }}>
-                            {g.name?.charAt(0).toUpperCase() ?? '?'}
+                            {g.fullName?.charAt(0).toUpperCase() ?? '?'}
                           </span>
                           <div className="min-w-0">
-                            <p className="text-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{g.name}</p>
+                            <p className="text-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{g.fullName}</p>
                             <p className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>{g.email}</p>
                           </div>
                           <span className="badge badge-neutral text-[0.625rem] shrink-0 ml-auto mr-2">
@@ -311,10 +394,10 @@ export default function AdminPage() {
                     {goedgekeurdeGebruikers.map(g => (
                       <div key={g.id} className="px-4 py-3 flex items-center gap-3">
                         <span className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0" style={{ background: 'var(--gradient)' }}>
-                          {g.name?.charAt(0).toUpperCase() ?? '?'}
+                          {g.fullName?.charAt(0).toUpperCase() ?? '?'}
                         </span>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>{g.name}</p>
+                          <p className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>{g.fullName}</p>
                           <p className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>{g.email}</p>
                         </div>
                         <span className="badge badge-success text-[0.625rem] shrink-0">Actief</span>

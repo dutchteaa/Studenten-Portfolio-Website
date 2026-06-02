@@ -13,6 +13,9 @@ export default function AanvraagPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imageUrl, setImageUrl] = useState(''); 
+
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
     setForm({ ...form, [e.target.name]: e.target.value });
   }
@@ -22,14 +25,53 @@ export default function AanvraagPage() {
       setError('Vul alle verplichte velden in.');
       return;
     }
+
     setLoading(true);
+    setError('');
+
     try {
-      await addDoc(collection(db, 'aanvragen'), { ...form, status: 'nieuw', ingediendOp: new Date().toISOString() });
+      let finalImageUrl = imageUrl;
+
+      // ✅ upload file als aanwezig
+      if (imageFile) {
+        finalImageUrl = await uploadImage(imageFile);
+      }
+
+      await addDoc(collection(db, 'aanvragen'), {
+        ...form,
+        imageUrl: finalImageUrl || '', // 👈 nieuw veld
+        status: 'nieuw',
+        ingediendOp: new Date().toISOString(),
+      });
+
       setVerzonden(true);
-    } catch {
+    } catch (err) {
+      console.error(err);
       setError('Er ging iets mis. Probeer het opnieuw.');
       setLoading(false);
     }
+  }
+
+  async function uploadImage(file: File): Promise<string> {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", "portfolio_img");
+
+    const res = await fetch(
+      "https://api.cloudinary.com/v1_1/duhriuhi9/image/upload",
+      {
+        method: "POST",
+        body: formData,
+      }
+    );
+
+    const data = await res.json();
+
+    if (!data.secure_url) {
+      throw new Error("Upload mislukt");
+    }
+
+    return data.secure_url;
   }
 
   if (verzonden) {
@@ -93,7 +135,43 @@ export default function AanvraagPage() {
               <label htmlFor="tijdsduur" className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>Tijdsduur</label>
               <input id="tijdsduur" name="tijdsduur" value={form.tijdsduur} onChange={handleChange} className="input-themed" placeholder="bijv. 6 weken" />
             </div>
+            
+            <p className="section-label mb-4">Afbeelding (optioneel)</p>
+
+            <div className="space-y-3 mb-7">
+              {/* Upload bestand */}
+              <div>
+                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>
+                  Upload afbeelding
+                </label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      setImageFile(file);
+                    }
+                  }}
+                  className="input-themed"
+                />
+              </div>
+            </div>
+            {(imageFile || imageUrl) && (
+              <div className="mb-4">
+                <p className="text-xs mb-2" style={{ color: 'var(--text-muted)' }}>
+                  Preview:
+                </p>
+                <img
+                  src={imageFile ? URL.createObjectURL(imageFile) : imageUrl}
+                  alt="preview"
+                  className="rounded-lg max-h-40 object-cover"
+                />
+              </div>
+            )}
+
           </div>
+          
 
           {error && <div className="badge badge-danger mb-4 w-full justify-center py-2 text-sm">{error}</div>}
 
