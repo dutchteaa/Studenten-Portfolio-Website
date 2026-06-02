@@ -2,13 +2,15 @@ import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } f
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { auth, db } from './firebase';
 
-export async function register(email: string, password: string, name: string) {
+export async function register(email: string, password: string, name: string, lastName: string) {
   const userCredential = await createUserWithEmailAndPassword(auth, email, password);
   const user = userCredential.user;
   await setDoc(doc(db, 'users', user.uid), {
     uid: user.uid,
     email,
     name,
+    lastName,
+    fullName: `${name} ${lastName}`,
     role: 'student',
     approved: false,
     createdAt: new Date().toISOString(),

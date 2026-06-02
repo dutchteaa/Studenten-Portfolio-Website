@@ -13,21 +13,37 @@ export default function RegisterPage() {
     if (!authLoading && user) router.push('/dashboard');
   }, [user, authLoading, router]);
   const [name, setName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
 
   async function handleRegister() {
     setError('');
-    if (!name.trim()) {
-      setError('Vul je volledige naam in.');
+    
+    if (!name.trim() || !lastName.trim()) {
+      setError('Vul je voor- en achternaam in.');
       return;
     }
-setLoading(true);
+
+
+    if (password.length < 6) {
+      setError('Wachtwoord moet minimaal 6 tekens lang zijn.');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError('Wachtwoorden komen niet overeen.');
+      return;
+    }
+
+    setLoading(true);
+
     try {
-      await register(email, password, name);
+      await register(email, password, name, lastName);
       setSuccess(true);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Er ging iets mis bij het registreren.');
@@ -67,9 +83,32 @@ setLoading(true);
           </div>
 
           <div className="space-y-3">
-            <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>Volledige naam</label>
-              <input type="text" placeholder="Jan de Vries" value={name} onChange={e => setName(e.target.value)} className="input-themed" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>
+                  Voornaam
+                </label>
+                <input
+                  type="text"
+                  placeholder="Jan"
+                  value={name}
+                  onChange={e => setName(e.target.value)}
+                  className="input-themed"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>
+                  Achternaam
+                </label>
+                <input
+                  type="text"
+                  placeholder="de Vries"
+                  value={lastName}
+                  onChange={e => setLastName(e.target.value)}
+                  className="input-themed"
+                />
+              </div>
             </div>
             <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>E-mailadres</label>
@@ -79,6 +118,19 @@ setLoading(true);
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>Wachtwoord</label>
               <input type="password" placeholder="Min. 6 tekens" value={password} onChange={e => setPassword(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handleRegister()} className="input-themed" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>
+                Herhaal wachtwoord
+              </label>
+              <input
+                type="password"
+                placeholder="Herhaal wachtwoord"
+                value={confirmPassword}
+                onChange={e => setConfirmPassword(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleRegister()}
+                className="input-themed"
+              />
             </div>
           </div>
 

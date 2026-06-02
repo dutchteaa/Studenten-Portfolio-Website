@@ -8,17 +8,18 @@ export async function POST(req: NextRequest) {
     if (!authHeader?.startsWith('Bearer ')) {
       return NextResponse.json({ error: 'Niet geautoriseerd' }, { status: 401 });
     }
-
+    
     const token = authHeader.split('Bearer ')[1];
     const callerToken = await getAdminAuth().verifyIdToken(token);
 
     // Check caller is admin
     const callerDoc = await getAdminDb().collection('users').doc(callerToken.uid).get();
+    console.log(callerDoc.data())
     if (callerDoc.data()?.role !== 'admin') {
       return NextResponse.json({ error: 'Geen admin rechten' }, { status: 403 });
     }
-
-    const { uid } = await req.json();
+    console.log(callerDoc)
+    const { uid, userId } = await req.json();
     if (!uid || typeof uid !== 'string') {
       return NextResponse.json({ error: 'Gebruiker ID ontbreekt' }, { status: 400 });
     }
@@ -30,7 +31,7 @@ export async function POST(req: NextRequest) {
 
     // Delete from Firebase Authentication
     try {
-      await getAdminAuth().deleteUser(uid);
+      await getAdminAuth().deleteUser(userId);
     } catch (err: unknown) {
       // User might not exist in Auth (e.g. already deleted), continue to delete Firestore doc
       const message = err instanceof Error ? err.message : '';
@@ -40,7 +41,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Delete from Firestore
-    await getAdminDb().collection('users').doc(uid).delete();
+    await getAdminDb().collection('users').doc(userId).delete();
 
     return NextResponse.json({ success: true });
   } catch (err) {

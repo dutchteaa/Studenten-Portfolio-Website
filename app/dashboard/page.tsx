@@ -35,6 +35,7 @@ export default function DashboardPage() {
   const [formulierLeden, setFormulierLeden] = useState<Lid[]>([]);
   const [opslaan_bezig, setOpslaanBezig] = useState(false);
   const [opslaanFout, setOpslaanFout] = useState('');
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => { if (!loading && !user) router.push('/login'); }, [user, loading, router]);
 
@@ -95,6 +96,50 @@ export default function DashboardPage() {
       if (bewerkId) { await updateDoc(doc(db, 'projecten', bewerkId), data); } else { await addDoc(collection(db, 'projecten'), { ...data, gepubliceerdOp: new Date().toISOString() }); }
       sluitFormulier(); laadProjecten();
     } catch (err) { console.error('Opslaan mislukt:', err); setOpslaanFout('Opslaan mislukt. Controleer je internetverbinding.'); setOpslaanBezig(false); }
+  }
+
+  async function uploadImage(file: File): Promise<string> {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", "portfolio_img"); // <-- jouw preset
+
+    const res = await fetch(
+      "https://api.cloudinary.com/v1_1/duhriuhi9/image/upload",
+      {
+        method: "POST",
+        body: formData,
+      }
+    );
+
+    const data = await res.json();
+
+    if (!data.secure_url) {
+      throw new Error("Upload mislukt");
+    }
+
+    return data.secure_url;
+  }
+
+  async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setUploading(true);
+
+      const url = await uploadImage(file);
+
+      // 👉 zet in je form state
+      setForm(prev => ({
+        ...prev,
+        afbeeldingUrl: url
+      }));
+    } catch (err) {
+      console.error(err);
+      setOpslaanFout("Upload mislukt");
+    } finally {
+      setUploading(false);
+    }
   }
 
   async function projectVerwijderen(id: string) { await deleteDoc(doc(db, 'projecten', id)); laadProjecten(); }
@@ -164,9 +209,40 @@ export default function DashboardPage() {
                 <div><label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>Demo link</label><input placeholder="https://..." value={form.demoLink} onChange={e => setForm({ ...form, demoLink: e.target.value })} className="input-themed" /></div>
               </div>
               <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>Afbeelding URL</label>
-                <input placeholder="https://..." value={form.afbeeldingUrl} onChange={e => setForm({ ...form, afbeeldingUrl: e.target.value })} className="input-themed" />
-                {form.afbeeldingUrl && <div className="relative mt-2 w-full h-44 rounded-lg overflow-hidden" style={{ border: '1px solid var(--border)' }}><Image src={form.afbeeldingUrl} alt="Preview" fill className="object-cover" unoptimized /></div>}
+                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>
+                  Afbeelding
+                </label>
+
+                {/* Upload input */}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileUpload}
+                  className="input-themed"
+                />
+
+                {/* Loading */}
+                {uploading && (
+                  <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
+                    Uploaden...
+                  </p>
+                )}
+
+                {/* Preview */}
+                {form.afbeeldingUrl && (
+                  <div
+                    className="relative mt-2 w-full h-44 rounded-lg overflow-hidden"
+                    style={{ border: '1px solid var(--border)' }}
+                  >
+                    <Image
+                      src={form.afbeeldingUrl}
+                      alt="Preview"
+                      fill
+                      className="object-cover"
+                      unoptimized
+                    />
+                  </div>
+                )}
               </div>
               <div>
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>YouTube link <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optioneel — wordt getoond in plaats van afbeelding)</span></label>
