@@ -4,6 +4,11 @@ import { useState } from 'react';
 import { collection, addDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
+// Topic-naam = het enige "wachtwoord" van ntfy. Wie hem kent kan meelezen
+// én publiceren, dus zet hier geen gevoelige info in de melding. Uit env
+// gehaald zodat de naam niet in de repo belandt (zie .env.local).
+const NTFY_TOPIC = process.env.NEXT_PUBLIC_NTFY_TOPIC;
+
 export default function AanvraagPage() {
   const [form, setForm] = useState({
     bedrijfsnaam: '', contactpersoon: '', email: '',
@@ -44,11 +49,36 @@ export default function AanvraagPage() {
         ingediendOp: new Date().toISOString(),
       });
 
+      await stuurNotificatie(form.bedrijfsnaam, form.contactpersoon);
+
       setVerzonden(true);
     } catch (err) {
       console.error(err);
       setError('Er ging iets mis. Probeer het opnieuw.');
       setLoading(false);
+    }
+  }
+
+  // Stuurt een push naar de ntfy-topic waarop de docenten geabonneerd zijn.
+  // Faalt stil: een mislukte melding mag het indienen niet blokkeren — de
+  // aanvraag is op dit punt al opgeslagen in Firestore.
+  async function stuurNotificatie(bedrijfsnaam: string, contactpersoon: string) {
+    if (!NTFY_TOPIC) {
+      console.warn('NEXT_PUBLIC_NTFY_TOPIC niet ingesteld — melding overgeslagen.');
+      return;
+    }
+    try {
+      await fetch(`https://ntfy.sh/${NTFY_TOPIC}`, {
+        method: 'POST',
+        body: `${bedrijfsnaam} — ${contactpersoon}`,
+        headers: {
+          Title: 'Nieuwe bedrijfsaanvraag',
+          Priority: 'high',
+          Tags: 'briefcase',
+        },
+      });
+    } catch (err) {
+      console.error('ntfy-melding mislukt:', err);
     }
   }
 
