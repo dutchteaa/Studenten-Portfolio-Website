@@ -96,7 +96,42 @@ export default function AanvraagPage() {
     <div className="min-h-screen py-10 px-5 relative">
       <div className="hero-glow" style={{ width: '500px', height: '500px', background: 'rgba(99,102,241,0.06)', top: '0', right: '-100px' }} />
       <div className="animate-fade-up max-w-2xl mx-auto relative">
-        <div className="card p-7" style={{ boxShadow: 'var(--glow)' }}>
+        <div className="animate-fade-up max-w-3xl mx-auto relative">
+
+  {/* ✅ Nieuwe header */}
+  <div className="card p-7 mb-6" style={{ boxShadow: 'var(--glow)' }}>
+    <span className="badge badge-accent mb-4 inline-flex">Projectenmarkt</span>
+
+    <h1 className="text-3xl font-bold mb-3" style={{ color: 'var(--text-primary)' }}>
+      Werk samen met onze studenten
+    </h1>
+
+    <p className="text-sm mb-4" style={{ color: 'var(--text-muted)' }}>
+      Welkom op onze projectenmarkt. Via dit platform kunnen bedrijven en organisaties
+      praktijkgerichte vraagstukken indienen voor studenten van het Nova College.
+      Het doel is om samen te verkennen hoe studenten kunnen bijdragen aan uw uitdaging.
+    </p>
+
+    <div className="space-y-3 text-sm" style={{ color: 'var(--text-muted)' }}>
+      <p>
+        Na het indienen van uw aanvraag wordt deze eerst beoordeeld door een docententeam.
+        We kijken of de opdracht aansluit bij het onderwijsprogramma en geschikt is voor studenten.
+      </p>
+
+      <p>
+        Binnen <strong style={{ color: 'var(--text-primary)' }}>één week</strong> nemen wij contact met u op
+        via het opgegeven e-mailadres om de mogelijkheden te bespreken.
+      </p>
+
+      <p>
+        Dit platform is bedoeld als kennismaking tussen onderwijs en bedrijfsleven.
+        Niet iedere aanvraag leidt direct tot een project, maar wij denken graag met u mee
+        over de kansen en mogelijkheden voor samenwerking.
+      </p>
+    </div>
+  </div>
+
+  {/* ✅ Formulier card */}
           <span className="badge badge-accent mb-4 inline-flex">Voor bedrijven</span>
           <h1 className="text-2xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>Project aanvragen</h1>
           <p className="text-sm mb-7" style={{ color: 'var(--text-muted)' }}>Vul het formulier in en onze studenten gaan aan de slag.</p>
